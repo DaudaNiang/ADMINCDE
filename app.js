@@ -1,5 +1,5 @@
 // Credentials injected via inline <script> before this file loads
-const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_SERVICE_KEY);
 
 // ── Toast ──────────────────────────────────────────────────
 let _tc = null;
