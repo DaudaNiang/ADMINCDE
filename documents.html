@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Documents KYC — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .kyc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+    .doc-filter-row { display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+    .ai-score-bar { height:5px; border-radius:99px; background:var(--bg-secondary); overflow:hidden; margin-top:6px; }
+    .ai-score-fill { height:100%; border-radius:99px; transition:width 0.5s; }
+  </style>
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Documents KYC</div>
+            <div class="page-sub" id="doc-sub"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="toggleView()" id="btn-toggle-view">Vue liste</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="kpi-grid kpi-grid-3 mb-20">
+        <div class="kpi-card" style="cursor:pointer" onclick="setStatut('en_attente')">
+          <div class="kpi-card-top">
+            <div class="kpi-card-label">En attente</div>
+            <div class="kpi-icon" style="background:#FFFBEB;color:#D97706" id="icon-pending"></div>
+          </div>
+          <div class="kpi-value" id="count-pending">—</div>
+          <div class="kpi-delta flat">À traiter</div>
+        </div>
+        <div class="kpi-card" style="cursor:pointer" onclick="setStatut('valide')">
+          <div class="kpi-card-top">
+            <div class="kpi-card-label">Validés</div>
+            <div class="kpi-icon" style="background:#DCFCE7;color:#16A34A" id="icon-valide"></div>
+          </div>
+          <div class="kpi-value" id="count-valide">—</div>
+          <div class="kpi-delta up">Approuvés</div>
+        </div>
+        <div class="kpi-card" style="cursor:pointer" onclick="setStatut('refuse')">
+          <div class="kpi-card-top">
+            <div class="kpi-card-label">Refusés</div>
+            <div class="kpi-icon" style="background:#FEF2F2;color:#DC2626" id="icon-refuse"></div>
+          </div>
+          <div class="kpi-value" id="count-refuse">—</div>
+          <div class="kpi-delta down">Rejetés</div>
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="doc-filter-row">
+        <div class="search-box" style="max-width:260px">
+          <span id="icon-search"></span>
+          <input class="search-input" id="search" type="text" placeholder="Rechercher…" oninput="applyFilters()" />
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip active" id="chip-all" onclick="setStatut('')">Tous</button>
+          <button class="filter-chip" id="chip-pending" onclick="setStatut('en_attente')">En attente</button>
+          <button class="filter-chip" id="chip-ok" onclick="setStatut('valide')">Validés</button>
+          <button class="filter-chip" id="chip-ko" onclick="setStatut('refuse')">Refusés</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip" onclick="setType('cni')">🪪 CNI</button>
+          <button class="filter-chip" onclick="setType('passeport')">📘 Passeport</button>
+          <button class="filter-chip" onclick="setType('carte_etudiant')">🎓 Carte étudiant</button>
+          <button class="filter-chip" onclick="setType('')">Tous types</button>
+        </div>
+      </div>
+
+      <!-- Cards grid -->
+      <div id="docs-grid" class="kyc-grid"></div>
+      <div id="docs-pagination"></div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Drawer : doc detail -->
+<div class="drawer-overlay" id="doc-drawer-overlay" onclick="closeDrawer('doc-drawer')"></div>
+<div class="drawer drawer-lg" id="doc-drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="dd-title">Document</div>
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:2px" id="dd-sub"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer('doc-drawer')">✕</button>
+  </div>
+  <div class="drawer-body" style="padding:20px;display:flex;flex-direction:column;gap:18px">
+
+    <!-- Doc preview placeholder -->
+    <div style="background:linear-gradient(135deg,var(--brand-light),var(--bg-secondary));border-radius:var(--r-xl);height:200px;display:flex;align-items:center;justify-content:center;font-size:56px;position:relative" id="dd-preview">
+      <span id="dd-preview-emoji">🪪</span>
+      <div style="position:absolute;bottom:10px;right:10px;display:flex;gap:6px">
+        <button class="btn btn-surface btn-sm" title="Zoom"><span id="icon-eye2"></span></button>
+        <button class="btn btn-surface btn-sm" title="Rotation">↻</button>
+        <button class="btn btn-surface btn-sm" title="Plein écran">⛶</button>
+      </div>
+    </div>
+
+    <!-- AI score -->
+    <div class="card" style="padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;display:flex;align-items:center;gap:6px">
+          <span id="icon-ai"></span> Score IA
+        </div>
+        <div style="font-size:18px;font-weight:800;color:var(--text)" id="dd-ai-score">—%</div>
+      </div>
+      <div class="ai-score-bar">
+        <div class="ai-score-fill" id="dd-ai-bar" style="width:0%;background:var(--green)"></div>
+      </div>
+      <div id="dd-ai-flags" style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+
+    <!-- Infos utilisateur -->
+    <div>
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Utilisateur</div>
+      <div class="info-list">
+        <div class="info-row"><span class="info-row-key">Nom</span><span class="info-row-value" id="dd-user-name">—</span></div>
+        <div class="info-row"><span class="info-row-key">Email</span><span class="info-row-value" id="dd-user-email">—</span></div>
+        <div class="info-row"><span class="info-row-key">Ville</span><span class="info-row-value" id="dd-user-ville">—</span></div>
+        <div class="info-row"><span class="info-row-key">Type doc.</span><span class="info-row-value" id="dd-type">—</span></div>
+        <div class="info-row"><span class="info-row-key">Soumis le</span><span class="info-row-value" id="dd-date">—</span></div>
+        <div class="info-row"><span class="info-row-key">Statut</span><span class="info-row-value" id="dd-statut">—</span></div>
+      </div>
+    </div>
+
+    <!-- Motifs refus -->
+    <div id="dd-motifs-section">
+      <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Motif de refus</div>
+      <div style="display:flex;flex-direction:column;gap:6px" id="dd-motifs">
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12.5px" onclick="this.parentElement.querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border)');this.style.borderColor='var(--brand)'"><input type="radio" name="motif" value="Document illisible" /> Document illisible</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12.5px" onclick="this.parentElement.querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border)');this.style.borderColor='var(--brand)'"><input type="radio" name="motif" value="Photo floue" /> Photo floue</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12.5px" onclick="this.parentElement.querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border)');this.style.borderColor='var(--brand)'"><input type="radio" name="motif" value="Document expiré" /> Document expiré</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12.5px" onclick="this.parentElement.querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border)');this.style.borderColor='var(--brand)'"><input type="radio" name="motif" value="Fraude suspectée" /> Fraude suspectée</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--r-md);cursor:pointer;font-size:12.5px" onclick="this.parentElement.querySelectorAll('label').forEach(l=>l.style.borderColor='var(--border)');this.style.borderColor='var(--brand)';document.getElementById('dd-autre-wrap').style.display='block'"><input type="radio" name="motif" value="autre" /> Autre motif</label>
+        <div id="dd-autre-wrap" style="display:none">
+          <textarea class="form-textarea" id="dd-autre" placeholder="Précisez le motif…" rows="2" style="margin-top:4px"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="display:flex;gap:10px;flex-wrap:wrap;padding-top:4px">
+      <button class="btn btn-green flex-1" id="dd-btn-valider" onclick="validerDoc()">✓ Valider le document</button>
+      <button class="btn btn-red flex-1" id="dd-btn-refuser" onclick="refuserDoc()">✕ Refuser</button>
+    </div>
+    <div id="dd-already" style="display:none" class="alert alert-info"><span>ℹ️</span><span>Ce document a déjà été traité.</span></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allDocs = [], filtered = [], currentPage = 1, activeStatut = '', activeType = '', viewMode = 'grid', selectedDoc = null;
+
+function gotoPage(n) { currentPage = n; renderDocs(); }
+function setStatut(s) {
+  activeStatut = s;
+  document.querySelectorAll('[id^="chip-"]').forEach(b => b.classList.remove('active'));
+  const ids = { '': 'all', en_attente: 'pending', valide: 'ok', refuse: 'ko' };
+  document.getElementById('chip-' + (ids[s] || 'all'))?.classList.add('active');
+  applyFilters();
+}
+function setType(t) {
+  activeType = t;
+  document.querySelectorAll('.filter-group:last-child .filter-chip').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  applyFilters();
+}
+function toggleView() {
+  viewMode = viewMode === 'grid' ? 'list' : 'grid';
+  document.getElementById('btn-toggle-view').textContent = viewMode === 'grid' ? 'Vue liste' : 'Vue grille';
+  renderDocs();
+}
+function applyFilters() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  filtered = allDocs.filter(d => {
+    if (activeStatut && d.statut !== activeStatut) return false;
+    if (activeType   && d.type   !== activeType)   return false;
+    if (q && !`${d.user_prenom} ${d.user_nom} ${d.type_label}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  currentPage = 1;
+  renderDocs();
+}
+function renderDocs() {
+  const page = paginate(filtered, currentPage);
+  const el = document.getElementById('docs-grid');
+  document.getElementById('doc-sub').textContent = `${num(filtered.length)} document${filtered.length !== 1 ? 's' : ''}`;
+  if (!filtered.length) { el.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">📄</div><div class="empty-title">Aucun document</div></div>`; document.getElementById('docs-pagination').innerHTML = ''; return; }
+  const typeEmoji = { cni:'🪪', passeport:'📘', carte_etudiant:'🎓', justificatif_domicile:'🏠' };
+  if (viewMode === 'grid') {
+    el.className = 'kyc-grid';
+    el.innerHTML = page.map(d => {
+      const scoreColor = d.ai_score >= 90 ? 'var(--green)' : d.ai_score >= 70 ? 'var(--orange)' : 'var(--red)';
+      return `<div class="kyc-card" onclick="openDoc('${d.id}')">
+        <div class="kyc-card-img">
+          <span style="font-size:52px">${typeEmoji[d.type] || '📄'}</span>
+          <div class="kyc-card-status">${statusBadge(d.statut)}</div>
+          <div class="kyc-ai-score">🤖 ${d.ai_score}%</div>
+        </div>
+        <div class="kyc-card-body">
+          <div class="kyc-card-name">${d.user_prenom} ${d.user_nom}</div>
+          <div class="kyc-card-meta">${d.type_label} · ${fmtDate(d.created_at)}</div>
+          <div class="ai-score-bar" style="margin-top:8px"><div class="ai-score-fill" style="width:${d.ai_score}%;background:${scoreColor}"></div></div>
+          ${d.ai_flags.length ? `<div style="margin-top:6px"><span class="badge badge-orange" style="font-size:9.5px">⚠ ${d.ai_flags[0]}</span></div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  } else {
+    el.className = '';
+    el.innerHTML = `<div class="table-container"><table class="data-table"><thead><tr><th>Utilisateur</th><th>Type</th><th>Score IA</th><th>Statut</th><th>Date</th><th></th></tr></thead><tbody>${
+      page.map(d => `<tr onclick="openDoc('${d.id}')">
+        <td><div style="display:flex;align-items:center;gap:10px">${avatarHTML(d.user_prenom,d.user_nom,'sm')}<div class="td-primary">${d.user_prenom} ${d.user_nom}</div></div></td>
+        <td>${typeBadge(d.type)}</td>
+        <td><span style="font-weight:700;color:${d.ai_score>=85?'var(--green)':d.ai_score>=70?'var(--orange)':'var(--red)'}">${d.ai_score}%</span></td>
+        <td>${statusBadge(d.statut)}</td>
+        <td>${fmtDate(d.created_at)}</td>
+        <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+      </tr>`).join('')
+    }</tbody></table></div>`;
+  }
+  renderPagination('docs-pagination', filtered.length, currentPage);
+}
+
+function openDoc(id) {
+  selectedDoc = allDocs.find(d => d.id === id);
+  if (!selectedDoc) return;
+  const d = selectedDoc;
+  const typeEmoji = { cni:'🪪', passeport:'📘', carte_etudiant:'🎓', justificatif_domicile:'🏠' };
+
+  document.getElementById('dd-title').textContent    = d.type_label;
+  document.getElementById('dd-sub').textContent      = d.user_prenom + ' ' + d.user_nom + ' · ' + fmtDate(d.created_at);
+  document.getElementById('dd-preview-emoji').textContent = typeEmoji[d.type] || '📄';
+  document.getElementById('dd-ai-score').textContent = d.ai_score + '%';
+  const scoreColor = d.ai_score >= 90 ? 'var(--green)' : d.ai_score >= 70 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('dd-ai-bar').style.width   = d.ai_score + '%';
+  document.getElementById('dd-ai-bar').style.background = scoreColor;
+  document.getElementById('dd-ai-flags').innerHTML   = d.ai_flags.map(f => `<span class="badge badge-orange">⚠ ${f}</span>`).join('') || '<span class="badge badge-green">✓ Aucun signalement</span>';
+
+  document.getElementById('dd-user-name').textContent  = d.user_prenom + ' ' + d.user_nom;
+  document.getElementById('dd-user-email').textContent = d.user_email;
+  document.getElementById('dd-user-ville').textContent = d.user_ville;
+  document.getElementById('dd-type').innerHTML         = typeBadge(d.type);
+  document.getElementById('dd-date').textContent       = fmtDate(d.created_at);
+  document.getElementById('dd-statut').innerHTML       = statusBadge(d.statut);
+
+  const isPending = d.statut === 'en_attente';
+  document.getElementById('dd-btn-valider').style.display  = isPending ? '' : 'none';
+  document.getElementById('dd-btn-refuser').style.display  = isPending ? '' : 'none';
+  document.getElementById('dd-motifs-section').style.display = isPending ? '' : 'none';
+  document.getElementById('dd-already').style.display     = isPending ? 'none' : 'flex';
+
+  document.getElementById('icon-eye2').innerHTML = ICONS.eye;
+  document.getElementById('icon-ai').innerHTML   = ICONS.ai;
+
+  openDrawer('doc-drawer');
+}
+
+function validerDoc() {
+  if (!selectedDoc) return;
+  showConfirm(`Valider le document de ${selectedDoc.user_prenom} ${selectedDoc.user_nom} ?`, () => {
+    const idx = allDocs.findIndex(d => d.id === selectedDoc.id);
+    if (idx !== -1) allDocs[idx].statut = 'valide';
+    selectedDoc.statut = 'valide';
+    toast('Document validé ✓');
+    updateStats();
+    applyFilters();
+    closeDrawer('doc-drawer');
+  }, { label: 'Valider' });
+}
+
+function refuserDoc() {
+  if (!selectedDoc) return;
+  const motif = document.querySelector('input[name="motif"]:checked')?.value;
+  const autre  = document.getElementById('dd-autre')?.value.trim();
+  const motifFinal = motif === 'autre' ? (autre || 'Autre motif') : motif;
+  if (!motifFinal) { toast('Sélectionnez un motif de refus', 'warning'); return; }
+  showConfirm(`Refuser le document avec le motif : "${motifFinal}" ?`, () => {
+    const idx = allDocs.findIndex(d => d.id === selectedDoc.id);
+    if (idx !== -1) { allDocs[idx].statut = 'refuse'; allDocs[idx].motif_refus = motifFinal; }
+    selectedDoc.statut = 'refuse'; selectedDoc.motif_refus = motifFinal;
+    toast('Document refusé', 'warning');
+    updateStats();
+    applyFilters();
+    closeDrawer('doc-drawer');
+  }, { danger: true, label: 'Refuser' });
+}
+
+function updateStats() {
+  document.getElementById('count-pending').textContent = num(allDocs.filter(d => d.statut === 'en_attente').length);
+  document.getElementById('count-valide').textContent  = num(allDocs.filter(d => d.statut === 'valide').length);
+  document.getElementById('count-refuse').textContent  = num(allDocs.filter(d => d.statut === 'refuse').length);
+}
+
+(async () => {
+  await initPage('documents');
+  document.getElementById('icon-pending').innerHTML = ICONS.documents;
+  document.getElementById('icon-valide').innerHTML  = ICONS.check;
+  document.getElementById('icon-refuse').innerHTML  = ICONS.cross;
+  document.getElementById('icon-search').innerHTML  = ICONS.search;
+
+  allDocs = MOCK.DOCUMENTS;
+  updateStats();
+  applyFilters();
+})();
+</script>
+</body>
+</html>

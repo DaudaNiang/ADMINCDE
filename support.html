@@ -4,277 +4,248 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Support — Admin CDE</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <script>
-    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-    window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-  </script>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
 
-  <div class="app-layout">
-    <div id="sidebar-placeholder"></div>
-    <div class="main-content">
-      <header class="topbar">
-        <div>
-          <div class="page-title">Support</div>
-          <div class="page-sub" id="ticket-sub"></div>
-        </div>
-        <div class="topbar-right">
-          <div class="admin-chip" id="admin-chip"></div>
-        </div>
-      </header>
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body" style="overflow:hidden">
+    <div id="header-placeholder"></div>
 
-      <main class="content">
-        <!-- Table absente -->
-        <div id="table-error" style="display:none">
-          <div style="background:var(--white);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);padding:48px 32px;text-align:center">
-            <div style="font-size:42px;margin-bottom:14px">🔧</div>
-            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Module en cours de configuration</div>
-            <p style="font-size:13px;color:var(--sub);max-width:420px;margin:0 auto 20px;line-height:1.6">
-              La table <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">support_tickets</code>
-              n'existe pas encore dans votre projet Supabase.
-              Créez-la pour activer ce module.
-            </p>
-            <div class="info-banner" style="max-width:520px;margin:0 auto;text-align:left">
-              <div class="info-banner-icon">💡</div>
-              <div>
-                <div style="font-weight:600;margin-bottom:4px">SQL à exécuter dans Supabase</div>
-                <code style="font-size:12px;font-family:monospace;line-height:1.8;display:block">
-                  CREATE TABLE support_tickets (<br>
-                  &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br>
-                  &nbsp;&nbsp;user_id uuid REFERENCES profiles(id),<br>
-                  &nbsp;&nbsp;sujet text, message text,<br>
-                  &nbsp;&nbsp;statut text DEFAULT 'ouvert',<br>
-                  &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br>
-                  );
-                </code>
-              </div>
-            </div>
+    <!-- 3-column Intercom-like layout -->
+    <div class="support-layout">
+
+      <!-- Column 1 : Ticket list -->
+      <div class="support-list">
+        <div class="support-list-header">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">Conversations</div>
+            <span class="badge badge-red" id="open-count">—</span>
+          </div>
+          <div class="search-box" style="max-width:100%">
+            <span id="icon-search"></span>
+            <input class="search-input" id="search" type="text" placeholder="Rechercher…" oninput="filterTickets()" />
+          </div>
+          <div style="display:flex;gap:4px;margin-top:8px">
+            <button class="filter-chip active" style="font-size:10px;height:24px" onclick="setFilter(this,'')">Tous</button>
+            <button class="filter-chip" style="font-size:10px;height:24px" onclick="setFilter(this,'ouvert')">Ouverts</button>
+            <button class="filter-chip" style="font-size:10px;height:24px" onclick="setFilter(this,'en_cours')">En cours</button>
+            <button class="filter-chip" style="font-size:10px;height:24px" onclick="setFilter(this,'resolu')">Résolus</button>
           </div>
         </div>
-
-        <!-- Contenu principal -->
-        <div id="support-content">
-          <div class="toolbar">
-            <div class="filter-pills">
-              <button class="filter-pill active" onclick="setFilter(this,'open')">Ouverts &amp; en cours</button>
-              <button class="filter-pill" onclick="setFilter(this,'resolu')">Résolus</button>
-              <button class="filter-pill" onclick="setFilter(this,'all')">Tous</button>
-            </div>
-          </div>
-
-          <div id="tickets-list">
-            <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
-          </div>
-          <div id="tickets-pagination"></div>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Modal ticket / conversation -->
-  <div class="modal-backdrop hidden" id="modal-ticket">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <div>
-          <div class="modal-title" id="ticket-modal-title"></div>
-          <div style="font-size:12px;color:var(--sub);margin-top:2px" id="ticket-modal-sub"></div>
-        </div>
-        <button class="modal-close" onclick="closeTicket()">✕</button>
+        <div class="support-list-body" id="ticket-list"></div>
       </div>
-      <div class="modal-body">
-        <div class="conv-box" id="conv-box">
-          <div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>
-        </div>
 
-        <div id="reply-form">
-          <div class="form-group" style="margin-bottom:8px">
-            <textarea class="form-textarea" id="reply-input" placeholder="Votre réponse…" rows="3" style="resize:none"></textarea>
-          </div>
-          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
-            <button class="btn btn-green btn-sm" id="btn-resolve" onclick="resolveTicket()">✓ Marquer résolu</button>
-            <button class="btn btn-primary" id="btn-send" onclick="sendReply()">Envoyer la réponse</button>
-          </div>
+      <!-- Column 2 : Chat -->
+      <div class="support-chat">
+        <div class="support-chat-header" id="chat-header">
+          <div style="color:var(--text-4);font-size:12.5px">← Sélectionnez un ticket</div>
         </div>
-        <div id="resolved-msg" style="display:none;padding:12px;background:var(--green-light);border-radius:8px;font-size:13px;color:var(--green);font-weight:600;text-align:center">
-          ✅ Ce ticket est résolu
+        <div class="support-chat-body" id="chat-body"></div>
+        <div class="support-chat-footer" id="chat-footer" style="display:none">
+          <div class="msg-input-wrap">
+            <textarea class="msg-input" id="msg-input" placeholder="Répondre au client…" rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+            <button class="btn btn-primary btn-icon" onclick="sendMsg()" title="Envoyer">
+              <span id="icon-send"></span>
+            </button>
+          </div>
+          <div class="msg-quick-replies">
+            <button class="msg-quick-reply" onclick="useReply('Bonjour, merci de nous avoir contactés. Nous examinons votre demande.')">Réponse d\'accueil</button>
+            <button class="msg-quick-reply" onclick="useReply('Votre problème a bien été noté. Notre équipe vous revient dans les 24h.')">24h SLA</button>
+            <button class="msg-quick-reply" onclick="useReply('Votre ticket est maintenant résolu. N\'hésitez pas à nous recontacter si besoin.')">Clôturer</button>
+          </div>
         </div>
       </div>
+
+      <!-- Column 3 : User info -->
+      <div class="support-sidebar" id="user-sidebar">
+        <div class="support-sidebar-section">
+          <div style="text-align:center;color:var(--text-4);font-size:12px;padding:16px 0">
+            Sélectionnez un ticket
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js"></script>
-  <script>
-    let allTickets = [], filtered = [], currentPage = 1, activeFilter = 'open';
-    let selectedTicket = null;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allTickets = [], filtered = [], activeFilter = '', selectedTicket = null;
+const PRIO_COLOR = { haute: 'var(--red)', normale: 'var(--orange)', basse: 'var(--text-4)' };
 
-    function gotoPage(n) { currentPage = n; renderTickets(); }
+function setFilter(btn, f) {
+  activeFilter = f;
+  document.querySelectorAll('.support-list-header .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  filterTickets();
+}
+function filterTickets() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  filtered = allTickets.filter(t => {
+    if (activeFilter && t.statut !== activeFilter) return false;
+    if (q && !`${t.user_prenom} ${t.user_nom} ${t.sujet}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  renderList();
+}
+function renderList() {
+  const open = allTickets.filter(t => t.statut === 'ouvert').length;
+  document.getElementById('open-count').textContent = open;
+  const el = document.getElementById('ticket-list');
+  if (!filtered.length) { el.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket</div></div>`; return; }
+  el.innerHTML = filtered.map(t => {
+    const active = selectedTicket?.id === t.id;
+    const unread = t.statut === 'ouvert';
+    return `<div class="support-ticket-item${active ? ' active' : ''}" onclick="openTicket('${t.id}')">
+      <div class="support-ticket-item-header">
+        ${unread ? '<span class="support-unread-dot"></span>' : ''}
+        <span class="support-ticket-item-name">${t.user_prenom} ${t.user_nom}</span>
+        <span class="support-ticket-item-time">${fmtTimeAgo(t.last_reply)}</span>
+      </div>
+      <div class="support-ticket-item-subject">${t.sujet}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        ${statusBadge(t.statut)}
+        <span style="font-size:9px;font-weight:700;color:${PRIO_COLOR[t.priorite]};text-transform:uppercase">${t.priorite}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
 
-    function setFilter(btn, filter) {
-      activeFilter = filter;
-      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilter();
-    }
+function openTicket(id) {
+  selectedTicket = allTickets.find(t => t.id === id);
+  if (!selectedTicket) return;
+  const t = selectedTicket;
+  renderList();
 
-    function applyFilter() {
-      filtered = allTickets.filter(t => {
-        if (activeFilter === 'open')   return ['ouvert','en_cours'].includes(t.statut);
-        if (activeFilter === 'resolu') return t.statut === 'resolu';
-        return true;
-      });
-      currentPage = 1;
-      renderTickets();
-    }
+  /* Chat header */
+  document.getElementById('chat-header').innerHTML = `
+    <div>${avatarHTML(t.user_prenom, t.user_nom, 'sm')}</div>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:13px;font-weight:700;color:var(--text)">${t.user_prenom} ${t.user_nom}</div>
+      <div style="font-size:11px;color:var(--text-3)">${t.sujet}</div>
+    </div>
+    ${statusBadge(t.statut)}
+    <button class="btn btn-green btn-sm" onclick="resolveTicket()" ${t.statut === 'resolu' ? 'disabled' : ''}>✓ Résoudre</button>
+    <button class="btn btn-ghost btn-sm" onclick="togglePrio()" title="Priorité">🔴 ${t.priorite}</button>
+  `;
 
-    function renderTickets() {
-      const el   = document.getElementById('tickets-list');
-      const page = paginate(filtered, currentPage);
+  /* Messages */
+  const body = document.getElementById('chat-body');
+  body.innerHTML = '';
 
-      const open = allTickets.filter(t => ['ouvert','en_cours'].includes(t.statut)).length;
-      document.getElementById('ticket-sub').textContent =
-        open > 0 ? `${open} ticket${open>1?'s':''} en attente` : 'Aucun ticket en attente';
+  const allMsgs = [
+    { is_admin: false, message: t.message, created_at: t.created_at },
+    ...t.messages.slice(1),
+  ];
+  allMsgs.forEach(m => {
+    const wrap = document.createElement('div');
+    wrap.className = `msg-bubble-wrap${m.is_admin ? ' admin-msg' : ''}`;
+    wrap.innerHTML = `
+      ${!m.is_admin ? avatarHTML(t.user_prenom, t.user_nom, 'xs') : ''}
+      <div class="msg-bubble ${m.is_admin ? 'admin-msg' : 'user-msg'}">${m.message}</div>
+      ${m.is_admin ? avatarHTML('CDE','Admin','xs','background:#1E3A5F;color:#7FB3E8') : ''}
+    `;
+    body.appendChild(wrap);
+    const timeEl = document.createElement('div');
+    timeEl.className = 'msg-time-label';
+    timeEl.textContent = fmtDateTime(m.created_at);
+    body.appendChild(timeEl);
+  });
 
-      if (!filtered.length) {
-        el.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket</div></div>`;
-        document.getElementById('tickets-pagination').innerHTML = '';
-        return;
-      }
+  body.scrollTop = body.scrollHeight;
+  document.getElementById('chat-footer').style.display = t.statut === 'resolu' ? 'none' : '';
 
-      el.innerHTML = page.map(t => {
-        const name = t.profiles ? `${t.profiles.prenom??''} ${t.profiles.nom??''}`.trim() : '—';
-        return `<div class="ticket-card" onclick="openTicket('${t.id}')">
-          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:40px;height:40px;flex-shrink:0">
-            ${initials(t.profiles?.nom, t.profiles?.prenom)}
-          </div>
-          <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;color:var(--text)">${name}</div>
-            <div style="font-size:13px;font-weight:500;color:var(--text);margin-top:2px">${t.sujet??'—'}</div>
-            <div style="font-size:12px;color:var(--sub);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.message??''}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-            ${statusBadge(t.statut)}
-            <span style="font-size:11px;color:var(--sub)">${fmtDate(t.created_at)}</span>
-          </div>
-        </div>`;
-      }).join('');
+  /* Sidebar */
+  const user = MOCK.USERS.find(u => u.id === t.user_id) || {};
+  const userAnn = MOCK.ANNONCES.filter(a => a.auteur_id === t.user_id).length;
+  document.getElementById('user-sidebar').innerHTML = `
+    <div class="support-sidebar-section" style="text-align:center;padding:20px 16px">
+      ${avatarHTML(t.user_prenom, t.user_nom, 'xl', 'margin:0 auto 10px')}
+      <div style="font-size:14px;font-weight:700;color:var(--text)">${t.user_prenom} ${t.user_nom}</div>
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:2px">${t.user_email}</div>
+      <div style="margin-top:8px">${roleBadge(user.role || 'etudiant')}</div>
+    </div>
+    <div class="support-sidebar-section">
+      <div class="support-sidebar-title">Ticket</div>
+      <div class="info-list">
+        <div class="info-row"><span class="info-row-key">Statut</span><span class="info-row-value">${statusBadge(t.statut)}</span></div>
+        <div class="info-row"><span class="info-row-key">Priorité</span><span class="info-row-value" style="color:${PRIO_COLOR[t.priorite]};font-weight:700;text-transform:capitalize">${t.priorite}</span></div>
+        <div class="info-row"><span class="info-row-key">Ouvert le</span><span class="info-row-value">${fmtDate(t.created_at)}</span></div>
+        <div class="info-row"><span class="info-row-key">Dernière rép.</span><span class="info-row-value">${fmtTimeAgo(t.last_reply)}</span></div>
+      </div>
+    </div>
+    <div class="support-sidebar-section">
+      <div class="support-sidebar-title">Utilisateur</div>
+      <div class="info-list">
+        <div class="info-row"><span class="info-row-key">Téléphone</span><span class="info-row-value">${user.telephone || '—'}</span></div>
+        <div class="info-row"><span class="info-row-key">SMS vérifié</span><span class="info-row-value">${user.verified ? '✅ Oui' : '❌ Non'}</span></div>
+        <div class="info-row"><span class="info-row-key">Inscrit le</span><span class="info-row-value">${fmtDate(user.created_at)}</span></div>
+        <div class="info-row"><span class="info-row-key">Annonces</span><span class="info-row-value">${userAnn}</span></div>
+      </div>
+    </div>
+    <div class="support-sidebar-section">
+      <a class="btn btn-ghost btn-sm" href="utilisateurs.html" style="width:100%">Voir profil complet →</a>
+    </div>
+  `;
+}
 
-      renderPagination('tickets-pagination', filtered.length, currentPage);
-    }
+function sendMsg() {
+  if (!selectedTicket) return;
+  const input = document.getElementById('msg-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const newMsg = { is_admin: true, message: msg, created_at: new Date().toISOString() };
+  selectedTicket.messages.push(newMsg);
+  const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
+  if (idx !== -1) { allTickets[idx].statut = 'en_cours'; allTickets[idx].last_reply = newMsg.created_at; selectedTicket.statut = 'en_cours'; }
+  input.value = ''; input.style.height = 'auto';
+  openTicket(selectedTicket.id);
+  toast('Réponse envoyée ✓');
+}
 
-    async function openTicket(id) {
-      selectedTicket = allTickets.find(t => t.id === id);
-      if (!selectedTicket) return;
-      const t = selectedTicket;
-      const name = t.profiles ? `${t.profiles.prenom??''} ${t.profiles.nom??''}`.trim() : '—';
+function useReply(text) { document.getElementById('msg-input').value = text; document.getElementById('msg-input').focus(); }
 
-      document.getElementById('ticket-modal-title').textContent = t.sujet ?? '—';
-      document.getElementById('ticket-modal-sub').innerHTML = `${name} · ${statusBadge(t.statut)} · ${fmtDate(t.created_at)}`;
-      document.getElementById('reply-input').value = '';
-      openModal('modal-ticket');
+function resolveTicket() {
+  if (!selectedTicket) return;
+  showConfirm('Marquer ce ticket comme résolu ?', () => {
+    const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
+    if (idx !== -1) allTickets[idx].statut = 'resolu';
+    selectedTicket.statut = 'resolu';
+    toast('Ticket résolu ✓');
+    openTicket(selectedTicket.id);
+    filterTickets();
+  }, { label: 'Résoudre' });
+}
 
-      const isResolved = t.statut === 'resolu';
-      document.getElementById('reply-form').style.display    = isResolved ? 'none' : 'block';
-      document.getElementById('resolved-msg').style.display  = isResolved ? 'block' : 'none';
-      document.getElementById('btn-resolve').style.display   = isResolved ? 'none' : 'inline-flex';
+function togglePrio() {
+  if (!selectedTicket) return;
+  const prios = ['haute','normale','basse'];
+  const next = prios[(prios.indexOf(selectedTicket.priorite) + 1) % prios.length];
+  selectedTicket.priorite = next;
+  const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
+  if (idx !== -1) allTickets[idx].priorite = next;
+  toast(`Priorité : ${next}`, 'info');
+  openTicket(selectedTicket.id);
+}
 
-      await loadConversation(t.id, t.message);
-    }
-
-    async function loadConversation(ticketId, firstMsg) {
-      const box = document.getElementById('conv-box');
-      box.innerHTML = '<div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>';
-
-      let html = `<div class="msg-row user">
-        <div class="msg-bubble user">${firstMsg ?? '(aucun message)'}</div>
-      </div>`;
-
-      const { data: msgs, error } = await sb.from('support_messages')
-        .select('*').eq('ticket_id', ticketId).order('created_at');
-
-      if (!error && msgs?.length) {
-        html += msgs.map(m => `
-          <div class="msg-row ${m.is_admin ? 'admin-msg' : 'user'}">
-            <div class="msg-bubble ${m.is_admin ? 'admin' : 'user'}">${m.message??''}</div>
-          </div>
-          <div class="msg-time">${fmtDateTime(m.created_at)}</div>`).join('');
-      }
-
-      box.innerHTML = html;
-      box.scrollTop = box.scrollHeight;
-    }
-
-    function closeTicket() { closeModal('modal-ticket'); selectedTicket = null; }
-
-    async function sendReply() {
-      if (!selectedTicket) return;
-      const msg = document.getElementById('reply-input').value.trim();
-      if (!msg) { toast('Le message ne peut pas être vide.', 'error'); return; }
-
-      const btn = document.getElementById('btn-send');
-      btn.disabled = true; btn.innerHTML = '<span class="spin-sm"></span>';
-
-      try {
-        await sb.from('support_messages').insert({
-          ticket_id: selectedTicket.id,
-          message: msg,
-          is_admin: true,
-        });
-        await sb.from('support_tickets').update({ statut: 'en_cours' }).eq('id', selectedTicket.id);
-        document.getElementById('reply-input').value = '';
-        await loadConversation(selectedTicket.id, selectedTicket.message);
-        const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
-        if (idx !== -1) allTickets[idx].statut = 'en_cours';
-        toast('Réponse envoyée ✓');
-      } catch(e) { toast('Erreur : ' + e.message, 'error'); }
-
-      btn.disabled = false; btn.innerHTML = 'Envoyer la réponse';
-    }
-
-    async function resolveTicket() {
-      if (!selectedTicket) return;
-      showConfirm('Marquer ce ticket comme résolu ?', async () => {
-        await sb.from('support_tickets').update({ statut: 'resolu' }).eq('id', selectedTicket.id);
-        const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
-        if (idx !== -1) { allTickets[idx].statut = 'resolu'; selectedTicket.statut = 'resolu'; }
-        document.getElementById('reply-form').style.display   = 'none';
-        document.getElementById('resolved-msg').style.display = 'block';
-        document.getElementById('btn-resolve').style.display  = 'none';
-        document.getElementById('ticket-modal-sub').innerHTML =
-          document.getElementById('ticket-modal-sub').textContent.split('·')[0].trim() +
-          ` · ${statusBadge('resolu')}`;
-        applyFilter();
-        toast('Ticket résolu ✓');
-      }, { label: 'Résoudre' });
-    }
-
-    async function loadTickets() {
-      // Vérifie si la table existe (code 42P01 = relation inexistante)
-      const { data, error } = await sb.from('support_tickets')
-        .select('*,profiles:user_id(nom,prenom)')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        document.getElementById('support-content').style.display = 'none';
-        document.getElementById('table-error').style.display = 'block';
-        return;
-      }
-
-      allTickets = data ?? [];
-      applyFilter();
-    }
-
-    (async () => {
-      const auth = await initPage('support');
-      if (!auth) return;
-      await loadTickets();
-    })();
-  </script>
+(async () => {
+  await initPage('support');
+  document.getElementById('icon-search').innerHTML = ICONS.search;
+  document.getElementById('icon-send').innerHTML   = ICONS.send;
+  allTickets = MOCK.TICKETS;
+  filterTickets();
+  if (allTickets.length) openTicket(allTickets[0].id);
+})();
+</script>
 </body>
 </html>

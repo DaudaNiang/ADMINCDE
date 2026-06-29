@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Analytics</div>
+            <div class="page-sub">Données d'usage et de croissance</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="filter-chip active">30 jours</button>
+            <button class="filter-chip">90 jours</button>
+            <button class="filter-chip">12 mois</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top KPIs -->
+      <div class="kpi-grid mb-20">
+        <div class="kpi-card">
+          <div class="kpi-card-label">DAU moyen</div>
+          <div class="kpi-value" id="a-dau">—</div>
+          <div class="kpi-delta up">+8.2% vs mois préc.</div>
+          <div id="spark-dau" style="margin-top:6px"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Taux de rétention J30</div>
+          <div class="kpi-value">68%</div>
+          <div class="kpi-delta up">+3 pts</div>
+          <div id="spark-ret" style="margin-top:6px"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Taux de churn</div>
+          <div class="kpi-value">4.2%</div>
+          <div class="kpi-delta down">+0.4 pts</div>
+          <div id="spark-churn" style="margin-top:6px"></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Durée session moy.</div>
+          <div class="kpi-value" style="font-size:22px">4m 32s</div>
+          <div class="kpi-delta up">+24s</div>
+          <div id="spark-sess" style="margin-top:6px"></div>
+        </div>
+      </div>
+
+      <!-- Big charts row -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Inscriptions mensuelles</div>
+              <div class="card-sub">12 derniers mois</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="chart-insc"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">DAU — 7 derniers jours</div>
+              <div class="card-sub">Utilisateurs actifs par jour</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="chart-dau7"></div></div>
+        </div>
+      </div>
+
+      <!-- Funnel + Répartition -->
+      <div class="grid-2 mb-20">
+        <!-- Funnel -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Entonnoir de conversion</div></div>
+          <div class="card-body">
+            <div id="funnel"></div>
+          </div>
+        </div>
+
+        <!-- Répartition par rôle -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Répartition des utilisateurs</div></div>
+          <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div class="donut-wrap" id="donut-roles"></div>
+            <div style="flex:1;min-width:160px">
+              <div id="roles-legend" style="display:flex;flex-direction:column;gap:10px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retention curve + Top cities -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Courbe de rétention</div>
+              <div class="card-sub">% utilisateurs encore actifs</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="chart-retention"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Top 8 villes</div></div>
+          <div class="card-body">
+            <div id="top-cities"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- NPS + Bounce -->
+      <div class="grid-3">
+        <div class="kpi-card">
+          <div class="kpi-card-label">Score NPS</div>
+          <div class="kpi-value" style="color:var(--green)">68</div>
+          <div class="kpi-delta up">Excellent (>50)</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Taux de rebond</div>
+          <div class="kpi-value">38.4%</div>
+          <div class="kpi-delta flat">Stable</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Revenu mensuel</div>
+          <div class="kpi-value" style="font-size:22px">14 800 €</div>
+          <div class="kpi-delta up">+12.4%</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+(async () => {
+  await initPage('analytics');
+  const A = MOCK.ANALYTICS;
+
+  document.getElementById('a-dau').textContent = num(MOCK.KPIS.dau_today);
+  document.getElementById('spark-dau').innerHTML   = renderSparkline(A.dau,   { color: '#1E5AA8', width: 120 });
+  document.getElementById('spark-ret').innerHTML   = renderSparkline(A.retention, { color: '#22C55E', width: 120 });
+  document.getElementById('spark-churn').innerHTML = renderSparkline([5,4.8,4.5,4.3,4.4,4.2], { color: '#EF4444', width: 120 });
+  document.getElementById('spark-sess').innerHTML  = renderSparkline([240,260,250,275,265,272], { color: '#8B5CF6', width: 120 });
+
+  document.getElementById('chart-insc').innerHTML =
+    renderLineChart([A.inscriptions, A.annonces.map(v => Math.round(v/3))], A.monthly_labels, { height: 160 }) +
+    `<div class="chart-legend"><div class="legend-item"><span class="legend-dot" style="background:#1E5AA8"></span>Inscriptions</div><div class="legend-item"><span class="legend-dot" style="background:#22C55E"></span>KYC envoyés</div></div>`;
+
+  document.getElementById('chart-dau7').innerHTML =
+    renderBars(A.dau_7j, A.dau_labels, { height: 140, barColor: '#1E5AA8' });
+
+  /* Funnel */
+  const funnelMax = A.funnel[0].value;
+  document.getElementById('funnel').innerHTML = A.funnel.map((f, i) => `
+    <div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
+        <span style="font-weight:600;color:var(--text)">${f.label}</span>
+        <span style="color:var(--text-3)">${num(f.value)} (${f.pct}%)</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill blue" style="width:${(f.value/funnelMax*100).toFixed(1)}%;background:${['#1E5AA8','#22C55E','#8B5CF6','#F59E0B','#EF4444'][i]}"></div>
+      </div>
+    </div>`).join('');
+
+  /* Donut roles */
+  const roles = A.by_role;
+  document.getElementById('donut-roles').innerHTML =
+    renderDonut(roles.map(r => ({ value: r.count, color: r.color })), { size: 120, strokeWidth: 16 }) +
+    `<div class="donut-center"><div class="donut-center-value">${num(roles.reduce((s,r)=>s+r.count,0))}</div><div class="donut-center-label">total</div></div>`;
+  document.getElementById('roles-legend').innerHTML = roles.map(r =>
+    `<div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <div class="legend-item"><span class="legend-dot" style="background:${r.color}"></span>${r.role}</div>
+      <strong style="font-size:12.5px">${r.pct}%</strong>
+    </div>`
+  ).join('');
+
+  /* Retention chart */
+  document.getElementById('chart-retention').innerHTML =
+    renderLineChart([A.retention], A.retention_labels, { height: 140, colors: ['#22C55E'] });
+
+  /* Top cities */
+  const maxCity = Math.max(...A.top_cities.map(c => c.users));
+  document.getElementById('top-cities').innerHTML = A.top_cities.map(c => `
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <div style="width:80px;font-size:12px;font-weight:600;color:var(--text);flex-shrink:0">${c.city}</div>
+      <div class="progress-bar" style="flex:1"><div class="progress-fill blue" style="width:${(c.users/maxCity*100).toFixed(1)}%"></div></div>
+      <div style="width:40px;text-align:right;font-size:12px;font-weight:700;color:var(--text-3)">${num(c.users)}</div>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>

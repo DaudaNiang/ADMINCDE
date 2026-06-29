@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Administration — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Administration</div>
+            <div class="page-sub">Admins, rôles, sessions et logs d'audit</div>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('modal-admin');document.getElementById('modal-admin').style.display='flex'">
+            <span id="icon-plus"></span> Ajouter un admin
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-bar mb-16" id="adm-tabs">
+        <button class="tab-btn active" onclick="switchTab('adm-tabs','admtab-','admins',this)">Équipe admin</button>
+        <button class="tab-btn" onclick="switchTab('adm-tabs','admtab-','audit',this)">Logs d'audit</button>
+        <button class="tab-btn" onclick="switchTab('adm-tabs','admtab-','sessions',this)">Sessions actives</button>
+        <button class="tab-btn" onclick="switchTab('adm-tabs','admtab-','securite',this)">Sécurité</button>
+      </div>
+
+      <!-- Tab: Admins -->
+      <div class="tab-content active" id="admtab-admins">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Admin</th>
+                <th>Rôle</th>
+                <th>Dernière connexion</th>
+                <th>Sessions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="admins-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Audit -->
+      <div class="tab-content" id="admtab-audit">
+        <div class="toolbar mb-12">
+          <div class="search-box">
+            <span id="icon-search"></span>
+            <input class="search-input" id="audit-search" type="text" placeholder="Filtrer les logs…" oninput="filterAudit()" />
+          </div>
+          <button class="btn btn-ghost" onclick="exportCSV(MOCK.AUDIT_LOGS.map(l=>({action:l.action,admin:l.admin.prenom+' '+l.admin.nom,cible:l.target,ip:l.ip,date:fmtDate(l.created_at)})),'audit_cde.csv')">
+            <span id="icon-dl"></span> Export CSV
+          </button>
+        </div>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Action</th>
+                <th>Admin</th>
+                <th>Cible</th>
+                <th>IP</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="audit-tbody"></tbody>
+          </table>
+          <div id="audit-pagination"></div>
+        </div>
+      </div>
+
+      <!-- Tab: Sessions -->
+      <div class="tab-content" id="admtab-sessions">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Sessions admin actives</div>
+            <button class="btn btn-red btn-sm" onclick="showConfirm('Révoquer toutes les sessions (sauf la vôtre) ?',()=>toast('Sessions révoquées','warning'),{danger:true,label:'Révoquer'})">Tout révoquer</button>
+          </div>
+          <div class="card-body" style="padding-top:0">
+            <div class="info-list">
+              <div class="info-row">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="pulse-green"></span>
+                  <div>
+                    <div style="font-size:12.5px;font-weight:600;color:var(--text)">CDE Admin — Chrome 126 / Windows</div>
+                    <div style="font-size:11px;color:var(--text-4)">82.141.32.54 · Paris · Session actuelle</div>
+                  </div>
+                </div>
+                <span class="badge badge-green">Actuelle</span>
+              </div>
+              <div class="info-row">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span class="pulse-green"></span>
+                  <div>
+                    <div style="font-size:12.5px;font-weight:600;color:var(--text)">Julie Dupont — Safari 17 / macOS</div>
+                    <div style="font-size:11px;color:var(--text-4)">90.72.18.241 · Lyon · Il y a 2h</div>
+                  </div>
+                </div>
+                <button class="btn btn-red btn-sm" onclick="toast('Session révoquée','warning')">Révoquer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Sécurité -->
+      <div class="tab-content" id="admtab-securite">
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Double authentification (2FA)</div></div>
+            <div class="card-body">
+              <div class="info-list">
+                <div class="info-row"><span class="info-row-key">CDE Admin</span><span class="badge badge-green">✓ Activé</span></div>
+                <div class="info-row"><span class="info-row-key">Julie Dupont</span><span class="badge badge-orange">Non activé</span></div>
+                <div class="info-row"><span class="info-row-key">Marc Leroy</span><span class="badge badge-orange">Non activé</span></div>
+              </div>
+              <div class="alert alert-warning" style="margin-top:14px"><span>⚠️</span><span>2 admins n'ont pas activé la 2FA. Recommandez-leur de l'activer.</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Politique de mots de passe</div></div>
+            <div class="card-body">
+              <div class="form-group mb-12">
+                <label class="form-label">Longueur minimale</label>
+                <input class="form-input" type="number" value="12" />
+              </div>
+              <div class="form-group mb-12">
+                <label class="form-label">Expiration (jours, 0 = jamais)</label>
+                <input class="form-input" type="number" value="90" />
+              </div>
+              <div class="form-group mb-12">
+                <label class="form-label">Tentatives avant blocage</label>
+                <input class="form-input" type="number" value="5" />
+              </div>
+              <button class="btn btn-primary" onclick="toast('Politique sauvegardée ✓')">Sauvegarder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal ajouter admin -->
+<div class="modal-backdrop hidden" id="modal-admin" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Inviter un administrateur</div>
+      <button class="modal-close" onclick="closeModal('modal-admin')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group mb-12">
+        <label class="form-label">Email *</label>
+        <input class="form-input" id="new-admin-email" type="email" placeholder="prenom.nom@coindesetudiants.com" />
+      </div>
+      <div class="form-group mb-12">
+        <label class="form-label">Rôle *</label>
+        <select class="form-select" id="new-admin-role">
+          <option value="super_admin">Super Admin (accès total)</option>
+          <option value="moderateur">Modérateur (annonces, signalements)</option>
+          <option value="support">Support (tickets uniquement)</option>
+        </select>
+      </div>
+      <div class="alert alert-info"><span>ℹ️</span><span>Un email d'invitation avec un mot de passe temporaire sera envoyé.</span></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-admin')">Annuler</button>
+      <button class="btn btn-primary" onclick="inviteAdmin()">Envoyer l'invitation</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allLogs = [], logsFiltered = [], logsPage = 1;
+
+function gotoAuditPage(n) { logsPage = n; renderAudit(); }
+function filterAudit() {
+  const q = (document.getElementById('audit-search')?.value || '').toLowerCase();
+  logsFiltered = allLogs.filter(l => `${l.action} ${l.admin.prenom} ${l.admin.nom} ${l.target} ${l.ip}`.toLowerCase().includes(q));
+  logsPage = 1;
+  renderAudit();
+}
+function renderAudit() {
+  const page = paginate(logsFiltered, logsPage);
+  document.getElementById('audit-tbody').innerHTML = page.map(l => `<tr>
+    <td class="td-primary">${l.action}</td>
+    <td>${avatarHTML(l.admin.prenom, l.admin.nom, 'xs')} ${l.admin.prenom} ${l.admin.nom}</td>
+    <td>${l.target}</td>
+    <td style="font-family:monospace;font-size:11px">${l.ip}</td>
+    <td class="text-sm text-muted">${fmtDateTime(l.created_at)}</td>
+  </tr>`).join('');
+  renderPagination('audit-pagination', logsFiltered.length, logsPage, 'gotoAuditPage');
+}
+
+function renderAdmins() {
+  document.getElementById('admins-tbody').innerHTML = MOCK.ADMINS.map(a => `<tr>
+    <td>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${avatarHTML(a.prenom, a.nom, 'sm')}
+        <div>
+          <div class="td-primary">${a.prenom} ${a.nom}</div>
+          <div class="text-xs text-muted">${a.email}</div>
+        </div>
+      </div>
+    </td>
+    <td>${statusBadge(a.role)}</td>
+    <td class="text-sm text-muted">${fmtTimeAgo(a.last_login)}</td>
+    <td>${a.sessions}</td>
+    <td>
+      ${a.id !== 'admin1' ? `
+        <button class="btn btn-ghost btn-sm" onclick="editRole('${a.id}')">Modifier rôle</button>
+        <button class="btn btn-red btn-sm" onclick="showConfirm('Révoquer l\'accès de ${a.prenom} ?',()=>toast('Accès révoqué','warning'),{danger:true,label:'Révoquer'})">Révoquer</button>
+      ` : '<span class="badge badge-green">Compte principal</span>'}
+    </td>
+  </tr>`).join('');
+}
+
+function editRole(id) { toast('Modification de rôle simulée (mock)', 'info'); }
+
+function inviteAdmin() {
+  const email = document.getElementById('new-admin-email').value.trim();
+  if (!email) { toast('Email requis', 'warning'); return; }
+  const role = document.getElementById('new-admin-role').value;
+  toast(`Invitation envoyée à ${email} (rôle: ${role})`, 'success');
+  closeModal('modal-admin');
+}
+
+(async () => {
+  await initPage('administration');
+  document.getElementById('icon-plus').innerHTML   = ICONS.plus;
+  document.getElementById('icon-search').innerHTML = ICONS.search;
+  document.getElementById('icon-dl').innerHTML     = ICONS.download;
+
+  renderAdmins();
+  allLogs = MOCK.AUDIT_LOGS;
+  logsFiltered = allLogs;
+  renderAudit();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notifications — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Notifications</div>
+            <div class="page-sub">Campagnes email, push et SMS</div>
+          </div>
+          <button class="btn btn-primary" onclick="openNewCampaign()">
+            <span id="icon-plus"></span> Nouvelle campagne
+          </button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="kpi-grid kpi-grid-3 mb-20">
+        <div class="kpi-card">
+          <div class="kpi-card-label">Total envoyés (ce mois)</div>
+          <div class="kpi-value" id="n-total">—</div>
+          <div class="kpi-delta up">+18% vs mois préc.</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Taux d'ouverture moy.</div>
+          <div class="kpi-value">71%</div>
+          <div class="kpi-delta up">Excellent</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Taux de clic moy.</div>
+          <div class="kpi-value">28%</div>
+          <div class="kpi-delta up">+4%</div>
+        </div>
+      </div>
+
+      <!-- Campaigns table -->
+      <div class="table-container">
+        <div class="table-toolbar">
+          <span class="table-title">Campagnes</span>
+          <div class="table-toolbar-actions">
+            <div class="filter-group">
+              <button class="filter-chip active" onclick="filterCamp(this,'')">Toutes</button>
+              <button class="filter-chip" onclick="filterCamp(this,'email')">📧 Email</button>
+              <button class="filter-chip" onclick="filterCamp(this,'push')">📱 Push</button>
+              <button class="filter-chip" onclick="filterCamp(this,'sms')">💬 SMS</button>
+            </div>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Nom de la campagne</th>
+              <th>Type</th>
+              <th>Statut</th>
+              <th>Envoyés</th>
+              <th>Ouverts</th>
+              <th>Clics</th>
+              <th>Tx ouverture</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="camp-tbody"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Modal nouvelle campagne -->
+<div class="modal-backdrop hidden" id="modal-campaign" style="display:none">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Nouvelle campagne</div>
+        <div class="modal-sub">Créer une notification groupée</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-campaign')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row mb-12">
+        <div class="form-group">
+          <label class="form-label">Nom de la campagne *</label>
+          <input class="form-input" id="camp-nom" type="text" placeholder="Ex: Rappel vérification KYC" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type *</label>
+          <select class="form-select" id="camp-type">
+            <option value="email">📧 Email</option>
+            <option value="push">📱 Push notification</option>
+            <option value="sms">💬 SMS</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row mb-12">
+        <div class="form-group">
+          <label class="form-label">Cible</label>
+          <select class="form-select">
+            <option>Tous les utilisateurs</option>
+            <option>Étudiants seulement</option>
+            <option>Bailleurs seulement</option>
+            <option>Non vérifiés SMS</option>
+            <option>Sans document KYC</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Planification</label>
+          <input class="form-input" type="datetime-local" />
+        </div>
+      </div>
+      <div class="form-group mb-12">
+        <label class="form-label">Sujet (email) ou Titre (push/SMS)</label>
+        <input class="form-input" type="text" placeholder="Objet du message" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Contenu</label>
+        <textarea class="form-textarea" rows="5" placeholder="Corps du message…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-campaign')">Annuler</button>
+      <button class="btn btn-ghost" onclick="saveDraft()">Sauvegarder brouillon</button>
+      <button class="btn btn-primary" onclick="sendNow()">Envoyer maintenant</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allCamps = [], campFilter = '';
+
+function filterCamp(btn, type) {
+  campFilter = type;
+  document.querySelectorAll('.filter-group .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCamps();
+}
+
+function renderCamps() {
+  const arr = campFilter ? allCamps.filter(c => c.type === campFilter) : allCamps;
+  document.getElementById('camp-tbody').innerHTML = arr.map(c => {
+    const ouverturePct = c.envoyes > 0 ? Math.round(c.ouverts / c.envoyes * 100) : 0;
+    return `<tr>
+      <td class="td-primary">${c.nom}</td>
+      <td>${typeBadge(c.type)}</td>
+      <td>${statusBadge(c.statut)}</td>
+      <td>${num(c.envoyes)}</td>
+      <td>${num(c.ouverts)}</td>
+      <td>${num(c.clics)}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar" style="width:60px"><div class="progress-fill blue" style="width:${ouverturePct}%"></div></div>
+          <span class="text-sm font-semi">${ouverturePct}%</span>
+        </div>
+      </td>
+      <td class="text-sm text-muted">${fmtDate(c.created_at)}</td>
+      <td>
+        ${c.statut === 'actif' ? '<button class="btn btn-ghost btn-sm" onclick="pauseCamp()">⏸</button>' : ''}
+        <button class="btn btn-ghost btn-sm">Dupliquer</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openNewCampaign() { openModal('modal-campaign'); document.getElementById('modal-campaign').style.display = 'flex'; }
+function saveDraft() { toast('Brouillon sauvegardé', 'info'); closeModal('modal-campaign'); }
+function sendNow() {
+  const nom = document.getElementById('camp-nom').value.trim();
+  if (!nom) { toast('Nom requis', 'warning'); return; }
+  const type = document.getElementById('camp-type').value;
+  allCamps.unshift({ id: 'new1', nom, type, statut: 'actif', envoyes: 0, ouverts: 0, clics: 0, created_at: new Date().toISOString() });
+  toast(`Campagne "${nom}" en cours d'envoi…`, 'success');
+  closeModal('modal-campaign');
+  renderCamps();
+  updateKpis();
+}
+function pauseCamp() { toast('Fonctionnalité disponible après connexion backend', 'info'); }
+
+function updateKpis() {
+  const total = allCamps.reduce((s, c) => s + c.envoyes, 0);
+  document.getElementById('n-total').textContent = num(total);
+}
+
+(async () => {
+  await initPage('notifications');
+  document.getElementById('icon-plus').innerHTML = ICONS.plus;
+  allCamps = MOCK.CAMPAIGNS;
+  renderCamps();
+  updateKpis();
+})();
+</script>
+</body>
+</html>

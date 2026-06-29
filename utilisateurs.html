@@ -4,307 +4,382 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Utilisateurs — Admin CDE</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <script>
-    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-    window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-  </script>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
 
-  <div class="app-layout">
-    <div id="sidebar-placeholder"></div>
-    <div class="main-content">
-      <header class="topbar">
-        <div>
-          <div class="page-title">Utilisateurs</div>
-          <div class="page-sub" id="user-count-sub"></div>
-        </div>
-        <div class="topbar-right">
-          <div class="admin-chip" id="admin-chip"></div>
-        </div>
-      </header>
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
 
-      <main class="content">
-        <div class="toolbar">
-          <div class="search-wrap">
-            <span class="search-icon">🔍</span>
-            <input class="search-input" id="search" type="text" placeholder="Rechercher par nom…" oninput="applyFilters()" />
-          </div>
-          <div class="filter-pills">
-            <button class="filter-pill active" onclick="setRole(this,'')">Tous</button>
-            <button class="filter-pill" onclick="setRole(this,'etudiant')">🎓 Étudiants</button>
-            <button class="filter-pill" onclick="setRole(this,'bailleur')">🏠 Bailleurs</button>
-            <button class="filter-pill" onclick="setRole(this,'particulier')">🧑 Particuliers</button>
-          </div>
-        </div>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Utilisateur</th>
-                <th>Rôle</th>
-                <th>SMS vérifié</th>
-                <th>Identité</th>
-                <th>Badge</th>
-                <th>Inscrit le</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="users-tbody">
-              <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--sub)">Chargement…</td></tr>
-            </tbody>
-          </table>
-          <div id="users-pagination"></div>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Modal détail utilisateur avec onglets -->
-  <div class="modal-backdrop hidden" id="modal-user">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <div style="display:flex;align-items:center;gap:12px">
-          <div class="avatar" id="modal-avatar" style="width:46px;height:46px;font-size:16px;flex-shrink:0"></div>
+      <div class="page-header">
+        <div class="page-header-row">
           <div>
-            <div class="modal-title" id="modal-name"></div>
-            <div style="font-size:12px;color:var(--sub);margin-top:2px" id="modal-role-badge"></div>
+            <div class="page-title">Utilisateurs</div>
+            <div class="page-sub" id="user-count"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-ghost" onclick="exportUsers()"><span id="icon-dl"></span> Exporter CSV</button>
           </div>
         </div>
-        <button class="modal-close" onclick="closeUserModal()">✕</button>
       </div>
-      <div class="modal-body">
-        <!-- Onglets -->
-        <div class="modal-tabs">
-          <button class="modal-tab active" onclick="switchModalTab('profil',this)">👤 Profil</button>
-          <button class="modal-tab" onclick="switchModalTab('annonces',this)">📋 Annonces</button>
-          <button class="modal-tab" onclick="switchModalTab('support',this)">💬 Support</button>
-        </div>
 
-        <!-- Onglet Profil -->
-        <div class="modal-tab-content active" id="mtab-profil">
-          <div class="detail-grid" id="modal-fields"></div>
-          <div class="sep"></div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-green btn-sm" id="btn-verify-id" onclick="verifyIdentity()">✓ Valider identité</button>
-            <button class="btn btn-red btn-sm" id="btn-suspend" onclick="suspendUser()">⛔ Suspendre (30j)</button>
+      <!-- Toolbar -->
+      <div class="toolbar mb-16">
+        <div class="search-box">
+          <span id="icon-search"></span>
+          <input class="search-input" id="search" type="text" placeholder="Rechercher par nom, email…" oninput="applyFilters()" />
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip active" onclick="setFilter(this,'')">Tous</button>
+          <button class="filter-chip" onclick="setFilter(this,'etudiant')">🎓 Étudiants</button>
+          <button class="filter-chip" onclick="setFilter(this,'bailleur')">🏠 Bailleurs</button>
+          <button class="filter-chip" onclick="setFilter(this,'particulier')">🧑 Particuliers</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="filter-chip" id="chip-verified" onclick="toggleVerified(this)">✓ Vérifiés</button>
+          <button class="filter-chip" id="chip-suspended" onclick="toggleSuspended(this)">Suspendus</button>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="table-container">
+        <div class="table-toolbar">
+          <span class="table-title">Membres</span>
+          <span class="table-count" id="table-count"></span>
+          <div class="table-toolbar-actions">
+            <span id="bulk-actions" style="display:none;gap:8px;display:none">
+              <button class="btn btn-ghost btn-sm" onclick="bulkSuspend()">Suspendre sélection</button>
+              <button class="btn btn-red btn-sm" onclick="bulkDelete()">Supprimer</button>
+            </span>
           </div>
         </div>
+        <table class="data-table" id="users-table">
+          <thead>
+            <tr>
+              <th class="td-check"><input type="checkbox" class="cde-checkbox" id="check-all" onchange="toggleAll(this)" /></th>
+              <th onclick="doSort('nom')">Utilisateur <span class="sort-arrow">↕</span></th>
+              <th onclick="doSort('role')">Rôle <span class="sort-arrow">↕</span></th>
+              <th onclick="doSort('verified')">SMS vérifié <span class="sort-arrow">↕</span></th>
+              <th>Identité</th>
+              <th>Badge</th>
+              <th onclick="doSort('created_at')">Inscrit le <span class="sort-arrow">↕</span></th>
+              <th onclick="doSort('last_seen')">Dernière activité <span class="sort-arrow">↕</span></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody">
+            <tr><td colspan="9" style="text-align:center;padding:32px;color:var(--text-4)">Chargement…</td></tr>
+          </tbody>
+        </table>
+        <div id="users-pagination"></div>
+      </div>
 
-        <!-- Onglet Annonces -->
-        <div class="modal-tab-content" id="mtab-annonces">
-          <div id="modal-user-annonces">
-            <div style="text-align:center;color:var(--sub);font-size:13px;padding:24px 0">Chargement…</div>
-          </div>
-        </div>
+    </div>
+  </div>
+</div>
 
-        <!-- Onglet Support -->
-        <div class="modal-tab-content" id="mtab-support">
-          <div id="modal-user-tickets">
-            <div style="text-align:center;color:var(--sub);font-size:13px;padding:24px 0">Chargement…</div>
-          </div>
-          <div style="margin-top:12px">
-            <a class="btn btn-primary btn-sm" href="support.html">💬 Voir tous les tickets support →</a>
-          </div>
+<!-- Drawer : user detail -->
+<div class="drawer-overlay" id="user-drawer-overlay" onclick="closeDrawer('user-drawer')"></div>
+<div class="drawer drawer-lg" id="user-drawer">
+  <div class="drawer-header">
+    <div id="drawer-user-avatar"></div>
+    <div style="flex:1;min-width:0">
+      <div class="drawer-title" id="drawer-user-name">—</div>
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:2px" id="drawer-user-email">—</div>
+    </div>
+    <div id="drawer-user-badge"></div>
+    <button class="drawer-close" onclick="closeDrawer('user-drawer')"><span id="icon-x"></span></button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-bar" id="user-tabs-bar">
+    <button class="tab-btn active" onclick="switchTab('user-tabs-bar','utab-','profil',this)">Profil</button>
+    <button class="tab-btn" onclick="switchTab('user-tabs-bar','utab-','annonces',this)">Annonces <span class="tab-badge" id="tab-badge-ann">0</span></button>
+    <button class="tab-btn" onclick="switchTab('user-tabs-bar','utab-','support',this)">Support <span class="tab-badge" id="tab-badge-sup">0</span></button>
+    <button class="tab-btn" onclick="switchTab('user-tabs-bar','utab-','historique',this)">Historique</button>
+    <button class="tab-btn" onclick="switchTab('user-tabs-bar','utab-','logs',this)">Logs</button>
+  </div>
+
+  <div class="drawer-body" style="padding:0">
+    <!-- Profil tab -->
+    <div class="tab-content active" id="utab-profil" style="padding:20px">
+      <div class="info-grid" id="drawer-info-grid" style="margin-bottom:20px"></div>
+      <hr class="sep">
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Actions</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-green btn-sm" id="btn-verify-id" onclick="verifyIdentity()">
+            <span id="icon-check"></span> Valider identité
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleVerifyPhone()">
+            <span id="icon-phone"></span> Forcer vérif. SMS
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="copyEmail()">
+            <span id="icon-copy"></span> Copier email
+          </button>
+          <button class="btn btn-red btn-sm" id="btn-suspend" onclick="suspendUser()">
+            <span id="icon-ban"></span> Suspendre 30j
+          </button>
         </div>
       </div>
     </div>
+
+    <!-- Annonces tab -->
+    <div class="tab-content" id="utab-annonces" style="padding:16px 0">
+      <div id="drawer-annonces"></div>
+    </div>
+
+    <!-- Support tab -->
+    <div class="tab-content" id="utab-support" style="padding:16px 0">
+      <div id="drawer-tickets"></div>
+    </div>
+
+    <!-- Historique tab -->
+    <div class="tab-content" id="utab-historique" style="padding:20px">
+      <div class="timeline" id="drawer-historique"></div>
+    </div>
+
+    <!-- Logs tab -->
+    <div class="tab-content" id="utab-logs" style="padding:20px">
+      <div id="drawer-logs"></div>
+    </div>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js"></script>
-  <script>
-    let allUsers = [], filtered = [], currentPage = 1, activeRole = '', selectedUser = null;
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allUsers = [], filtered = [], currentPage = 1, activeRole = '', showVerified = false, showSuspended = false, selectedUser = null;
+let sortKey = 'created_at', sortAsc = false;
 
-    function gotoPage(n) { currentPage = n; renderTable(); }
+function doSort(key) {
+  if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('.sort-arrow').forEach(el => el.textContent = '↕');
+  const th = Array.from(document.querySelectorAll('.data-table th')).find(t => t.getAttribute('onclick') === `doSort('${key}')`);
+  if (th) { th.classList.add('sorted'); th.querySelector('.sort-arrow').textContent = sortAsc ? '↑' : '↓'; }
+  renderTable();
+}
 
-    function setRole(btn, role) {
-      activeRole = role;
-      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilters();
-    }
+function setFilter(btn, role) {
+  activeRole = role;
+  document.querySelectorAll('.filter-chip').forEach(b => { if (!['chip-verified','chip-suspended'].includes(b.id)) b.classList.remove('active'); });
+  btn.classList.add('active');
+  applyFilters();
+}
 
-    function applyFilters() {
-      const q = document.getElementById('search').value.toLowerCase();
-      filtered = allUsers.filter(u => {
-        const matchRole = !activeRole || u.role === activeRole;
-        const name = `${u.prenom??''} ${u.nom??''}`.toLowerCase();
-        return matchRole && (!q || name.includes(q));
-      });
-      currentPage = 1;
-      renderTable();
-    }
+function toggleVerified(btn)  { showVerified  = !showVerified;  btn.classList.toggle('active', showVerified);  applyFilters(); }
+function toggleSuspended(btn) { showSuspended = !showSuspended; btn.classList.toggle('active', showSuspended); applyFilters(); }
+function toggleAll(cb)        { document.querySelectorAll('.row-check').forEach(c => c.checked = cb.checked); updateBulk(); }
+function updateBulk() { const n = document.querySelectorAll('.row-check:checked').length; const ba = document.getElementById('bulk-actions'); if(ba) ba.style.display = n > 0 ? 'flex' : 'none'; }
 
-    function renderTable() {
-      const page = paginate(filtered, currentPage);
-      const tbody = document.getElementById('users-tbody');
+function gotoPage(n) { currentPage = n; renderTable(); }
 
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun résultat</div></div></td></tr>`;
-        document.getElementById('users-pagination').innerHTML = '';
-        return;
-      }
+function applyFilters() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  filtered = allUsers.filter(u => {
+    if (activeRole && u.role !== activeRole) return false;
+    if (showVerified && !u.verified) return false;
+    if (showSuspended && !(u.banned_until && new Date(u.banned_until) > new Date())) return false;
+    const name = `${u.prenom} ${u.nom} ${u.email}`.toLowerCase();
+    return !q || name.includes(q);
+  });
+  filtered = sortBy(filtered, sortKey, sortAsc);
+  currentPage = 1;
+  renderTable();
+}
 
-      tbody.innerHTML = page.map(u => {
-        const c = ROLE_COLOR[u.role]??'#647488', bg = ROLE_BG[u.role]??'#F3F4F6';
-        const isSuspended = u.banned_until && new Date(u.banned_until) > new Date();
-        return `<tr onclick="openUser('${u.id}')">
-          <td><div class="td-user">
-            <div class="avatar" style="background:${bg};color:${c}">${initials(u.nom,u.prenom)}</div>
-            <div>
-              <div class="td-name">${u.prenom??''} ${u.nom??''}</div>
-              ${isSuspended ? '<div class="td-sub" style="color:var(--red)">Suspendu</div>' : ''}
-            </div>
-          </div></td>
-          <td>${roleBadge(u.role)}</td>
-          <td>${u.verified ? '<span class="badge badge-green">✓ Oui</span>' : '<span class="badge badge-gray">Non</span>'}</td>
-          <td>${u.identity_verified ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-gray">—</span>'}</td>
-          <td>${u.badge ? `<span class="badge badge-violet">${u.badge}</span>` : '<span style="color:var(--sub)">—</span>'}</td>
-          <td style="white-space:nowrap">${fmtDate(u.created_at)}</td>
-          <td><button class="btn btn-ghost btn-sm">Voir</button></td>
-        </tr>`;
-      }).join('');
+function renderTable() {
+  const page  = paginate(filtered, currentPage);
+  const tbody = document.getElementById('users-tbody');
+  document.getElementById('table-count').textContent = `${num(filtered.length)} utilisateurs`;
+  document.getElementById('user-count').textContent = `${num(filtered.length)} utilisateurs`;
 
-      renderPagination('users-pagination', filtered.length, currentPage);
-      document.getElementById('user-count-sub').textContent = `${filtered.length} utilisateur${filtered.length!==1?'s':''}`;
-    }
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun résultat</div><div class="empty-sub">Modifiez les filtres</div></div></td></tr>`;
+    document.getElementById('users-pagination').innerHTML = ''; return;
+  }
 
-    function switchModalTab(tab, btn) {
-      document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.modal-tab-content').forEach(c => c.classList.remove('active'));
-      btn.classList.add('active');
-      document.getElementById('mtab-' + tab).classList.add('active');
-    }
+  tbody.innerHTML = page.map(u => {
+    const suspended = u.banned_until && new Date(u.banned_until) > new Date();
+    return `<tr onclick="openUser('${u.id}')">
+      <td class="td-check" onclick="event.stopPropagation()">
+        <input type="checkbox" class="cde-checkbox row-check" onchange="updateBulk()" />
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          ${avatarHTML(u.prenom, u.nom)}
+          <div>
+            <div class="td-primary">${u.prenom} ${u.nom}</div>
+            <div class="text-xs text-muted">${u.email}</div>
+            ${suspended ? '<span class="badge badge-red" style="margin-top:2px">Suspendu</span>' : ''}
+          </div>
+        </div>
+      </td>
+      <td>${roleBadge(u.role)}</td>
+      <td>${u.verified ? '<span class="badge badge-green">✓ Oui</span>' : '<span class="badge badge-gray">Non</span>'}</td>
+      <td>${u.identity_verified ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-gray">—</span>'}</td>
+      <td>${u.badge ? `<span class="badge badge-violet">${u.badge}</span>` : '<span class="text-subtle">—</span>'}</td>
+      <td class="text-sm text-muted">${fmtDate(u.created_at)}</td>
+      <td class="text-sm text-muted">${fmtTimeAgo(u.last_seen)}</td>
+      <td onclick="event.stopPropagation()">
+        <button class="btn btn-ghost btn-sm btn-icon" onclick="openUser('${u.id}')"><span id="icon-eye-${u.id}"></span></button>
+      </td>
+    </tr>`;
+  }).join('');
 
-    async function openUser(id) {
-      selectedUser = allUsers.find(u => u.id === id);
-      if (!selectedUser) return;
-      const u = selectedUser;
-      const c = ROLE_COLOR[u.role]??'#647488', bg = ROLE_BG[u.role]??'#F3F4F6';
+  page.forEach(u => {
+    const el = document.getElementById('icon-eye-' + u.id);
+    if (el) el.innerHTML = ICONS.eye;
+  });
 
-      const av = document.getElementById('modal-avatar');
-      av.textContent = initials(u.nom, u.prenom);
-      av.style.background = bg; av.style.color = c;
-      document.getElementById('modal-name').textContent = `${u.prenom??''} ${u.nom??''}`.trim() || '—';
-      document.getElementById('modal-role-badge').innerHTML = roleBadge(u.role);
+  renderPagination('users-pagination', filtered.length, currentPage);
+}
 
-      // Reset tabs
-      document.querySelectorAll('.modal-tab').forEach((b,i) => b.classList.toggle('active', i===0));
-      document.querySelectorAll('.modal-tab-content').forEach((c,i) => c.classList.toggle('active', i===0));
+function openUser(id) {
+  selectedUser = allUsers.find(u => u.id === id);
+  if (!selectedUser) return;
+  const u = selectedUser;
 
-      // Profil fields
-      const isSuspended = u.banned_until && new Date(u.banned_until) > new Date();
-      const fields = [
-        ['Rôle', ROLE_LABEL[u.role]??u.role],
-        ['Téléphone', u.telephone??'—'],
-        ['SMS vérifié', u.verified?'✅ Oui':'❌ Non'],
-        ['Identité vérifiée', u.identity_verified?'✅ Oui':'❌ Non'],
-        ['Badge', u.badge||'—'],
-        ['Inscrit le', formatDate(u.created_at)],
-        ...(u.role==='etudiant' ? [['Parcours', u.parcours??'—']] : []),
-        ...(u.role==='particulier' ? [
-          ['Type', u.sous_type??'—'],
-          ['SIRET', u.siret??'—'],
-          ['Entreprise', u.entreprise??'—'],
-        ] : []),
-        ...(isSuspended ? [['Suspendu jusqu\'au', formatDate(u.banned_until)]] : []),
-      ];
-      document.getElementById('modal-fields').innerHTML = fields.map(([k,v]) =>
-        `<div><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`).join('');
+  document.getElementById('drawer-user-avatar').innerHTML = avatarHTML(u.prenom, u.nom, 'md');
+  document.getElementById('drawer-user-name').textContent  = u.prenom + ' ' + u.nom;
+  document.getElementById('drawer-user-email').textContent = u.email;
+  document.getElementById('drawer-user-badge').innerHTML   = roleBadge(u.role);
 
-      document.getElementById('btn-verify-id').style.display = u.identity_verified ? 'none' : 'inline-flex';
-      document.getElementById('btn-suspend').style.display = isSuspended ? 'none' : 'inline-flex';
+  const suspended = u.banned_until && new Date(u.banned_until) > new Date();
+  document.getElementById('drawer-info-grid').innerHTML = [
+    ['Téléphone',   u.telephone  || '—'],
+    ['Ville',       u.ville      || '—'],
+    ['SMS vérifié', u.verified   ? '✅ Oui' : '❌ Non'],
+    ['Identité',    u.identity_verified ? '✅ Validée' : '❌ Non vérifiée'],
+    ['Inscrit le',  fmtDate(u.created_at)],
+    ['Dernière vue',fmtTimeAgo(u.last_seen)],
+    ...(u.role === 'etudiant' ? [['Université', u.universite || '—'],['Parcours', u.parcours || '—']] : []),
+    ...(suspended ? [['Suspendu jusqu\'au', fmtDate(u.banned_until)]] : []),
+  ].map(([k, v]) => `<div class="info-item"><div class="info-label">${k}</div><div class="info-value">${v}</div></div>`).join('');
 
-      openModal('modal-user');
+  document.getElementById('btn-verify-id').style.display = u.identity_verified ? 'none' : 'inline-flex';
+  document.getElementById('btn-suspend').style.display   = suspended           ? 'none' : 'inline-flex';
 
-      // Load annonces & tickets in background
-      loadUserAnnonces(u.id);
-      loadUserTickets(u.id);
-    }
+  /* Inject icons */
+  ['icon-check','icon-phone','icon-copy','icon-ban','icon-x'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = ICONS[id.replace('icon-','').replace('check','check').replace('phone','phone').replace('copy','copy').replace('ban','ban').replace('x','cross')] || '';
+  });
+  document.getElementById('icon-x').innerHTML     = ICONS.cross;
+  document.getElementById('icon-check').innerHTML = ICONS.check;
+  document.getElementById('icon-phone').innerHTML = ICONS.phone;
+  document.getElementById('icon-copy').innerHTML  = ICONS.copy;
+  document.getElementById('icon-ban').innerHTML   = ICONS.ban;
 
-    async function loadUserAnnonces(userId) {
-      const el = document.getElementById('modal-user-annonces');
-      const { data, error } = await sb.from('annonces').select('id,titre,statut,categorie,created_at')
-        .eq('auteur_id', userId).order('created_at', { ascending: false }).limit(10);
-      if (error || !data?.length) {
-        el.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">📋</div><div class="empty-title">Aucune annonce</div></div>';
-        return;
-      }
-      el.innerHTML = `<table class="data-table"><thead><tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Date</th></tr></thead><tbody>${
-        data.map(a => `<tr>
-          <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">${a.titre??'—'}</td>
-          <td>${CAT_ICON[a.categorie]??'📋'} ${a.categorie??'—'}</td>
-          <td>${statusBadge(a.statut)}</td>
-          <td>${fmtDate(a.created_at)}</td>
-        </tr>`).join('')
-      }</tbody></table>`;
-    }
+  const tabBadgeAnn = document.getElementById('tab-badge-ann');
+  const tabBadgeSup = document.getElementById('tab-badge-sup');
+  if (tabBadgeAnn) tabBadgeAnn.textContent = u.nb_annonces;
+  if (tabBadgeSup) tabBadgeSup.textContent = u.nb_tickets;
 
-    async function loadUserTickets(userId) {
-      const el = document.getElementById('modal-user-tickets');
-      const { data, error } = await sb.from('support_tickets').select('id,sujet,statut,created_at')
-        .eq('user_id', userId).order('created_at', { ascending: false }).limit(5).catch(() => ({ data: [], error: null }));
-      if (error || !data?.length) {
-        el.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket</div></div>';
-        return;
-      }
-      el.innerHTML = `<table class="data-table"><thead><tr><th>Sujet</th><th>Statut</th><th>Date</th></tr></thead><tbody>${
-        data.map(t => `<tr>
-          <td style="font-weight:600">${t.sujet??'—'}</td>
-          <td>${statusBadge(t.statut)}</td>
-          <td>${fmtDate(t.created_at)}</td>
-        </tr>`).join('')
-      }</tbody></table>`;
-    }
+  /* Reset tabs */
+  document.querySelectorAll('#user-drawer .tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.querySelectorAll('#user-drawer .tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
 
-    function closeUserModal() {
-      closeModal('modal-user');
-      selectedUser = null;
-    }
+  /* Annonces tab */
+  const userAnn = MOCK.ANNONCES.filter(a => a.auteur_id === u.id);
+  document.getElementById('drawer-annonces').innerHTML = userAnn.length
+    ? `<table class="data-table"><thead><tr><th>Titre</th><th>Catégorie</th><th>Statut</th><th>Date</th></tr></thead><tbody>${
+        userAnn.map(a => `<tr><td class="td-primary">${a.titre}</td><td>${typeBadge(a.categorie) || a.categorie}</td><td>${statusBadge(a.statut)}</td><td>${fmtDate(a.created_at)}</td></tr>`).join('')
+      }</tbody></table>`
+    : `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Aucune annonce</div></div>`;
 
-    async function verifyIdentity() {
-      if (!selectedUser) return;
-      showConfirm(`Valider l'identité de ${selectedUser.prenom} ${selectedUser.nom} ?`, async () => {
-        showSpinner();
-        await sb.from('profiles').update({ identity_verified: true }).eq('id', selectedUser.id);
-        hideSpinner();
-        toast('Identité validée ✓');
-        closeUserModal();
-        await loadUsers();
-      }, { label: 'Valider' });
-    }
+  /* Tickets tab */
+  const userTix = MOCK.TICKETS.filter(t => t.user_id === u.id);
+  document.getElementById('drawer-tickets').innerHTML = userTix.length
+    ? `<table class="data-table"><thead><tr><th>Sujet</th><th>Statut</th><th>Date</th></tr></thead><tbody>${
+        userTix.map(t => `<tr><td class="td-primary">${t.sujet}</td><td>${statusBadge(t.statut)}</td><td>${fmtDate(t.created_at)}</td></tr>`).join('')
+      }</tbody></table>`
+    : `<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket</div></div>`;
 
-    async function suspendUser() {
-      if (!selectedUser) return;
-      showConfirm(`Suspendre ${selectedUser.prenom} ${selectedUser.nom} pendant 30 jours ?`, async () => {
-        showSpinner();
-        const until = new Date(); until.setDate(until.getDate() + 30);
-        await sb.from('profiles').update({ banned_until: until.toISOString() }).eq('id', selectedUser.id);
-        hideSpinner();
-        toast('Compte suspendu pour 30 jours');
-        closeUserModal();
-        await loadUsers();
-      }, { danger: true, label: 'Suspendre', title: 'Suspendre le compte' });
-    }
+  /* Historique tab */
+  document.getElementById('drawer-historique').innerHTML = [
+    { type:'info',    title:'Inscription', sub:'Compte créé', time: fmtDate(u.created_at) },
+    u.verified ? { type:'success', title:'SMS vérifié', sub:'Numéro de téléphone confirmé', time: fmtDate(u.created_at) } : null,
+    u.identity_verified ? { type:'success', title:'Identité validée', sub:'Document KYC accepté', time: fmtDate(u.created_at) } : null,
+    u.badge ? { type:'info', title:'Badge attribué', sub: u.badge, time: fmtDate(u.created_at) } : null,
+  ].filter(Boolean).map(e => `
+    <div class="timeline-item">
+      <div class="timeline-dot ${e.type}"></div>
+      <div class="timeline-body">
+        <div class="timeline-title">${e.title}</div>
+        <div class="timeline-sub">${e.sub}</div>
+        <div class="timeline-time">${e.time}</div>
+      </div>
+    </div>`).join('');
 
-    async function loadUsers() {
-      const { data } = await sb.from('profiles').select('*').neq('role','admin').order('created_at',{ascending:false});
-      allUsers = data ?? [];
-      applyFilters();
-    }
+  /* Logs tab */
+  document.getElementById('drawer-logs').innerHTML = `<div class="alert alert-info"><span>ℹ️</span><span>Les logs de connexion seront disponibles après connexion de la base.</span></div>`;
 
-    (async () => {
-      const auth = await initPage('utilisateurs');
-      if (!auth) return;
-      await loadUsers();
-    })();
-  </script>
+  openDrawer('user-drawer');
+}
+
+function verifyIdentity() {
+  if (!selectedUser) return;
+  showConfirm(`Valider l'identité de ${selectedUser.prenom} ${selectedUser.nom} ?`, () => {
+    selectedUser.identity_verified = true;
+    const idx = allUsers.findIndex(u => u.id === selectedUser.id);
+    if (idx !== -1) allUsers[idx].identity_verified = true;
+    toast('Identité validée ✓');
+    openUser(selectedUser.id);
+    applyFilters();
+  }, { label: 'Valider' });
+}
+
+function suspendUser() {
+  if (!selectedUser) return;
+  showConfirm(`Suspendre ${selectedUser.prenom} ${selectedUser.nom} 30 jours ?`, () => {
+    const until = new Date(); until.setDate(until.getDate() + 30);
+    selectedUser.banned_until = until.toISOString();
+    const idx = allUsers.findIndex(u => u.id === selectedUser.id);
+    if (idx !== -1) allUsers[idx].banned_until = selectedUser.banned_until;
+    toast('Compte suspendu pour 30 jours', 'warning');
+    openUser(selectedUser.id);
+    applyFilters();
+  }, { danger: true, label: 'Suspendre', title: 'Suspendre le compte' });
+}
+
+function toggleVerifyPhone() {
+  if (!selectedUser) return;
+  selectedUser.verified = !selectedUser.verified;
+  toast(selectedUser.verified ? 'SMS marqué vérifié ✓' : 'Vérification SMS retirée', selectedUser.verified ? 'success' : 'warning');
+  openUser(selectedUser.id);
+  applyFilters();
+}
+
+function copyEmail() {
+  if (!selectedUser) return;
+  navigator.clipboard?.writeText(selectedUser.email).then(() => toast('Email copié ✓')).catch(() => toast('Impossible de copier', 'error'));
+}
+
+function bulkSuspend() { toast('Suspension groupée simulée (mock)', 'info'); }
+function bulkDelete()  { toast('Suppression groupée simulée (mock)', 'info'); }
+
+function exportUsers() {
+  exportCSV(filtered.map(u => ({ prenom: u.prenom, nom: u.nom, email: u.email, role: u.role, ville: u.ville, inscrit: fmtDate(u.created_at) })), 'utilisateurs_cde.csv');
+}
+
+(async () => {
+  await initPage('utilisateurs');
+  document.getElementById('icon-search').innerHTML = ICONS.search;
+  document.getElementById('icon-dl').innerHTML = ICONS.download;
+
+  allUsers = MOCK.USERS;
+  applyFilters();
+})();
+</script>
 </body>
 </html>

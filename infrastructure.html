@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Infrastructure — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Infrastructure</div>
+            <div class="page-sub">Statut des services, performance et logs</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="header-status">
+              <span class="status-dot"></span>
+              <span id="global-status">Tous systèmes OK</span>
+            </div>
+            <button class="btn btn-ghost" onclick="location.reload()"><span id="icon-refresh"></span> Rafraîchir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Service status -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Statut des services</div>
+            <span class="badge badge-green" id="all-ok-badge">Tous opérationnels</span>
+          </div>
+          <div class="card-body" style="padding-top:0">
+            <div id="services-list"></div>
+          </div>
+        </div>
+
+        <!-- Storage & DB -->
+        <div class="card">
+          <div class="card-header"><div class="card-title">Ressources</div></div>
+          <div class="card-body">
+            <div style="margin-bottom:20px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+                <span style="font-weight:600;color:var(--text)">Stockage</span>
+                <span class="text-muted" id="storage-text">—</span>
+              </div>
+              <div class="progress-bar" style="height:8px"><div class="progress-fill blue" id="storage-bar" style="width:0%"></div></div>
+            </div>
+            <div style="margin-bottom:20px">
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+                <span style="font-weight:600;color:var(--text)">Base de données</span>
+                <span class="text-muted" id="db-text">—</span>
+              </div>
+              <div class="progress-bar" style="height:8px"><div class="progress-fill green" style="width:8%"></div></div>
+            </div>
+            <div class="info-list">
+              <div class="info-row"><span class="info-row-key">Requêtes aujourd'hui</span><span class="info-row-value" id="req-today">—</span></div>
+              <div class="info-row"><span class="info-row-key">Erreurs aujourd'hui</span><span class="info-row-value text-red" id="err-today">—</span></div>
+              <div class="info-row"><span class="info-row-key">Taux d'erreur</span><span class="info-row-value" id="err-rate">—</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">CPU (24h)</div>
+              <div class="card-sub">Utilisation processeur</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="chart-cpu"></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">RAM (24h)</div>
+              <div class="card-sub">Utilisation mémoire</div>
+            </div>
+          </div>
+          <div class="card-body"><div id="chart-ram"></div></div>
+        </div>
+      </div>
+
+      <!-- Requests chart -->
+      <div class="card mb-20">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Requêtes par heure (24h)</div>
+            <div class="card-sub">Toutes routes Supabase</div>
+          </div>
+        </div>
+        <div class="card-body"><div id="chart-req"></div></div>
+      </div>
+
+      <!-- Logs -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Logs récents</div>
+          <button class="btn btn-ghost btn-sm">Exporter</button>
+        </div>
+        <div class="card-body" style="padding-top:0">
+          <div id="logs-list"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+const LOG_SAMPLES = [
+  { level:'INFO',  msg:'GET /rest/v1/profiles → 200 in 42ms',   time:'Il y a 2 min' },
+  { level:'INFO',  msg:'POST /auth/v1/token → 200 in 28ms',     time:'Il y a 3 min' },
+  { level:'WARN',  msg:'Edge Function timeout (180ms) on /verify-kyc', time:'Il y a 8 min' },
+  { level:'INFO',  msg:'GET /storage/v1/object/documents/... → 200', time:'Il y a 11 min' },
+  { level:'INFO',  msg:'POST /rest/v1/annonces → 201 in 35ms',  time:'Il y a 14 min' },
+  { level:'ERROR', msg:'POST /functions/v1/send-sms → 500 Service unavailable', time:'Il y a 22 min' },
+  { level:'INFO',  msg:'GET /rest/v1/support_tickets → 200 in 55ms', time:'Il y a 30 min' },
+  { level:'WARN',  msg:'Rate limit approaching (8200/10000 req/h)', time:'Il y a 45 min' },
+];
+const LOG_COLORS = { INFO:'var(--text-3)', WARN:'var(--orange)', ERROR:'var(--red)' };
+
+(async () => {
+  await initPage('infrastructure');
+  document.getElementById('icon-refresh').innerHTML = ICONS.refresh;
+  const I = MOCK.INFRA;
+
+  /* Service list */
+  const pulseClass = { ok:'pulse-green', warn:'pulse-orange', error:'pulse-red' };
+  document.getElementById('services-list').innerHTML = I.services.map(s => `
+    <div class="status-row">
+      <div class="status-label">
+        <span class="${pulseClass[s.statut]}"></span>
+        ${s.name}
+      </div>
+      <div style="display:flex;align-items:center;gap:16px">
+        <span class="text-sm text-muted">${s.latency}</span>
+        <span class="text-sm text-muted">${s.uptime}</span>
+        <span class="${s.statut === 'ok' ? 'status-ok' : s.statut === 'warn' ? 'status-warn' : 'status-error'} font-semi text-sm">
+          ${s.statut === 'ok' ? 'OK' : s.statut === 'warn' ? 'Dégradé' : 'Hors ligne'}
+        </span>
+      </div>
+    </div>`).join('');
+
+  const anyWarn = I.services.some(s => s.statut === 'warn');
+  if (anyWarn) {
+    document.getElementById('all-ok-badge').className = 'badge badge-orange';
+    document.getElementById('all-ok-badge').textContent = 'Dégradation partielle';
+    document.getElementById('global-status').textContent = 'Dégradation partielle';
+  }
+
+  /* Resources */
+  const storPct = (I.storage_gb / I.storage_max * 100).toFixed(0);
+  document.getElementById('storage-text').textContent = `${I.storage_gb} GB / ${I.storage_max} GB`;
+  document.getElementById('storage-bar').style.width  = storPct + '%';
+  document.getElementById('db-text').textContent      = `${I.db_size_mb} MB`;
+  document.getElementById('req-today').textContent    = num(I.req_today);
+  document.getElementById('err-today').textContent    = num(I.errors_today);
+  document.getElementById('err-rate').textContent     = (I.errors_today / I.req_today * 100).toFixed(3) + '%';
+
+  /* Charts */
+  document.getElementById('chart-cpu').innerHTML = renderLineChart([I.cpu], I.labels_24h, { height: 120, colors: ['#1E5AA8'] });
+  document.getElementById('chart-ram').innerHTML = renderLineChart([I.ram], I.labels_24h, { height: 120, colors: ['#22C55E'] });
+  document.getElementById('chart-req').innerHTML = renderBars(I.req_per_min, I.labels_24h, { height: 120, barColor: '#8B5CF6' });
+
+  /* Logs */
+  document.getElementById('logs-list').innerHTML = LOG_SAMPLES.map(l => `
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${l.level==='ERROR'?'var(--red-light)':l.level==='WARN'?'var(--orange-light)':'var(--bg-secondary)'};color:${LOG_COLORS[l.level]};white-space:nowrap">${l.level}</span>
+      <span style="font-size:12px;color:var(--text-2);font-family:monospace;flex:1;line-height:1.5">${l.msg}</span>
+      <span style="font-size:11px;color:var(--text-4);white-space:nowrap">${l.time}</span>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>

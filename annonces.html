@@ -4,230 +4,242 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Annonces — Admin CDE</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <script>
-    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-    window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
-  </script>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
 
-  <div class="app-layout">
-    <div id="sidebar-placeholder"></div>
-    <div class="main-content">
-      <header class="topbar">
-        <div>
-          <div class="page-title">Annonces</div>
-          <div class="page-sub" id="ann-sub"></div>
-        </div>
-        <div class="topbar-right">
-          <div class="admin-chip" id="admin-chip"></div>
-        </div>
-      </header>
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
 
-      <main class="content">
-        <div class="toolbar">
-          <div class="search-wrap">
-            <span class="search-icon">🔍</span>
-            <input class="search-input" id="search" type="text" placeholder="Rechercher par titre…" oninput="applyFilters()" />
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Annonces</div>
+            <div class="page-sub" id="ann-count"></div>
           </div>
-          <div class="filter-pills">
-            <button class="filter-pill active" onclick="setStatus(this,'')">Toutes</button>
-            <button class="filter-pill" onclick="setStatus(this,'actif')">Actives</button>
-            <button class="filter-pill" onclick="setStatus(this,'signale')">⚠️ Signalées</button>
-            <button class="filter-pill" onclick="setStatus(this,'suspendu')">Suspendues</button>
-          </div>
-        </div>
-
-        <div class="table-wrap">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Annonce</th>
-                <th>Catégorie</th>
-                <th>Auteur</th>
-                <th>Prix</th>
-                <th>Signalements</th>
-                <th>Statut</th>
-                <th>Date</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody id="ann-tbody">
-              <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--sub)">Chargement…</td></tr>
-            </tbody>
-          </table>
-          <div id="ann-pagination"></div>
-        </div>
-      </main>
-    </div>
-  </div>
-
-  <!-- Modal détail annonce -->
-  <div class="modal-backdrop hidden" id="modal-ann">
-    <div class="modal modal-lg">
-      <div class="modal-header">
-        <div>
-          <div class="modal-title" id="modal-ann-title"></div>
-          <div style="font-size:12px;color:var(--sub);margin-top:3px" id="modal-ann-sub"></div>
-        </div>
-        <button class="modal-close" onclick="closeAnn()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="detail-grid" id="modal-ann-fields"></div>
-        <div class="sep"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-green btn-sm" id="btn-restore"     onclick="changeStatus('actif')">✓ Restaurer</button>
-          <button class="btn btn-amber btn-sm" id="btn-suspend-ann" onclick="changeStatus('suspendu')">⛔ Suspendre</button>
-          <button class="btn btn-red btn-sm"                        onclick="deleteAnn()">🗑 Supprimer</button>
+          <button class="btn btn-ghost" onclick="exportAnn()"><span id="icon-dl"></span> Export CSV</button>
         </div>
       </div>
+
+      <div class="toolbar mb-16">
+        <div class="search-box">
+          <span id="icon-search"></span>
+          <input class="search-input" id="search" type="text" placeholder="Titre, auteur, ville…" oninput="applyFilters()" />
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip active" onclick="setStatus(this,'')">Toutes</button>
+          <button class="filter-chip" onclick="setStatus(this,'actif')">Actives</button>
+          <button class="filter-chip" onclick="setStatus(this,'signale')">⚠️ Signalées</button>
+          <button class="filter-chip" onclick="setStatus(this,'suspendu')">Suspendues</button>
+        </div>
+        <div class="filter-group">
+          <button class="filter-chip active" onclick="setCat(this,'')">Toutes catégories</button>
+          <button class="filter-chip" onclick="setCat(this,'logement')">🏠 Logement</button>
+          <button class="filter-chip" onclick="setCat(this,'emploi')">💼 Emploi</button>
+          <button class="filter-chip" onclick="setCat(this,'services')">🔧 Services</button>
+          <button class="filter-chip" onclick="setCat(this,'dons')">🎁 Dons</button>
+          <button class="filter-chip" onclick="setCat(this,'bons_plans')">🏷️ Bons plans</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Annonce</th>
+              <th>Catégorie</th>
+              <th>Auteur</th>
+              <th>Prix</th>
+              <th>Signalements</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="ann-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-4)">Chargement…</td></tr>
+          </tbody>
+        </table>
+        <div id="ann-pagination"></div>
+      </div>
+
     </div>
   </div>
+</div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="app.js"></script>
-  <script>
-    let allAnnonces = [], filtered = [], currentPage = 1, activeStatus = '', selectedAnn = null;
+<!-- Drawer : annonce detail -->
+<div class="drawer-overlay" id="ann-drawer-overlay" onclick="closeDrawer('ann-drawer')"></div>
+<div class="drawer" id="ann-drawer">
+  <div class="drawer-header">
+    <div>
+      <div class="drawer-title" id="ad-title">Annonce</div>
+      <div style="font-size:11.5px;color:var(--text-3);margin-top:2px" id="ad-sub"></div>
+    </div>
+    <div id="ad-badge"></div>
+    <button class="drawer-close" onclick="closeDrawer('ann-drawer')">✕</button>
+  </div>
 
-    const urlStatus = new URLSearchParams(location.search).get('filter');
-    if (urlStatus) activeStatus = urlStatus;
+  <div class="tabs-bar" id="ann-tabs">
+    <button class="tab-btn active" onclick="switchTab('ann-tabs','atab-','detail',this)">Détail</button>
+    <button class="tab-btn" onclick="switchTab('ann-tabs','atab-','signalements',this)">Signalements</button>
+    <button class="tab-btn" onclick="switchTab('ann-tabs','atab-','historique',this)">Historique</button>
+  </div>
 
-    function gotoPage(n) { currentPage = n; renderTable(); }
+  <div class="drawer-body" style="padding:0">
+    <div class="tab-content active" id="atab-detail" style="padding:20px;display:flex;flex-direction:column;gap:16px">
+      <!-- Photo placeholder -->
+      <div style="height:180px;background:linear-gradient(135deg,var(--brand-light),var(--bg));border-radius:var(--r-xl);display:flex;align-items:center;justify-content:center;font-size:52px" id="ad-thumb"><span id="ad-thumb-emoji">🏠</span></div>
+      <div class="info-list">
+        <div class="info-row"><span class="info-row-key">Titre</span><span class="info-row-value" id="ad-info-titre">—</span></div>
+        <div class="info-row"><span class="info-row-key">Catégorie</span><span class="info-row-value" id="ad-info-cat">—</span></div>
+        <div class="info-row"><span class="info-row-key">Auteur</span><span class="info-row-value" id="ad-info-auteur">—</span></div>
+        <div class="info-row"><span class="info-row-key">Prix</span><span class="info-row-value" id="ad-info-prix">—</span></div>
+        <div class="info-row"><span class="info-row-key">Ville</span><span class="info-row-value" id="ad-info-ville">—</span></div>
+        <div class="info-row"><span class="info-row-key">Statut</span><span class="info-row-value" id="ad-info-statut">—</span></div>
+        <div class="info-row"><span class="info-row-key">Publiée le</span><span class="info-row-value" id="ad-info-date">—</span></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Description</div>
+        <div style="font-size:12.5px;color:var(--text-2);line-height:1.6" id="ad-info-desc">—</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px">
+        <button class="btn btn-green btn-sm" id="ad-btn-restore"  onclick="changeStatus('actif')">✓ Restaurer</button>
+        <button class="btn btn-orange btn-sm" id="ad-btn-suspend" onclick="changeStatus('suspendu')">⛔ Suspendre</button>
+        <button class="btn btn-red btn-sm" onclick="deleteAnn()">🗑 Supprimer définitivement</button>
+      </div>
+    </div>
 
-    function setStatus(btn, status) {
-      activeStatus = status;
-      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      applyFilters();
-    }
+    <div class="tab-content" id="atab-signalements" style="padding:20px">
+      <div id="ad-signalements"></div>
+    </div>
 
-    function applyFilters() {
-      const q = document.getElementById('search').value.toLowerCase();
-      filtered = allAnnonces.filter(a => {
-        const matchStatus = !activeStatus || a.statut === activeStatus;
-        return matchStatus && (!q || (a.titre??'').toLowerCase().includes(q));
-      });
-      currentPage = 1;
-      renderTable();
-    }
+    <div class="tab-content" id="atab-historique" style="padding:20px">
+      <div class="timeline" id="ad-historique"></div>
+    </div>
+  </div>
+</div>
 
-    function renderTable() {
-      const page  = paginate(filtered, currentPage);
-      const tbody = document.getElementById('ann-tbody');
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allAnn = [], filtered = [], currentPage = 1, activeStatus = '', activeCat = '', selectedAnn = null;
+const CAT_EMOJI = { logement:'🏠', emploi:'💼', services:'🔧', dons:'🎁', bons_plans:'🏷️' };
 
-      if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Aucune annonce trouvée</div></div></td></tr>`;
-        document.getElementById('ann-pagination').innerHTML = '';
-        return;
-      }
+function gotoPage(n) { currentPage = n; renderTable(); }
+function setStatus(btn, s) { activeStatus = s; document.querySelectorAll('.filter-group:first-of-type .filter-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); applyFilters(); }
+function setCat(btn, c) { activeCat = c; document.querySelectorAll('.filter-group:last-of-type .filter-chip').forEach(b => b.classList.remove('active')); btn.classList.add('active'); applyFilters(); }
+function applyFilters() {
+  const q = (document.getElementById('search')?.value || '').toLowerCase();
+  filtered = allAnn.filter(a => {
+    if (activeStatus && a.statut !== activeStatus) return false;
+    if (activeCat    && a.categorie !== activeCat) return false;
+    if (q && !`${a.titre} ${a.auteur_prenom} ${a.auteur_nom} ${a.ville}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  currentPage = 1;
+  renderTable();
+}
+function renderTable() {
+  const page  = paginate(filtered, currentPage);
+  const tbody = document.getElementById('ann-tbody');
+  document.getElementById('ann-count').textContent = `${num(filtered.length)} annonce${filtered.length !== 1 ? 's' : ''}`;
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Aucune annonce trouvée</div></div></td></tr>`;
+    document.getElementById('ann-pagination').innerHTML = ''; return;
+  }
+  tbody.innerHTML = page.map(a => `<tr onclick="openAnn('${a.id}')">
+    <td><div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:18px">${CAT_EMOJI[a.categorie] || '📋'}</span>
+      <div class="td-primary truncate" style="max-width:200px">${a.titre}</div>
+    </div></td>
+    <td>${typeBadge(a.categorie) || a.categorie}</td>
+    <td>${a.auteur_prenom} ${a.auteur_nom}</td>
+    <td>${a.prix ? num(a.prix) + ' €' : 'Gratuit'}</td>
+    <td>${a.nb_signalements > 0 ? `<span class="badge badge-red">⚠️ ${a.nb_signalements}</span>` : '<span class="text-subtle">—</span>'}</td>
+    <td>${statusBadge(a.statut)}</td>
+    <td class="text-sm text-muted">${fmtDate(a.created_at)}</td>
+    <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+  </tr>`).join('');
+  renderPagination('ann-pagination', filtered.length, currentPage);
+}
 
-      tbody.innerHTML = page.map(a => {
-        const auteur = a.auteur ? `${a.auteur.prenom??''} ${a.auteur.nom??''}`.trim() : '—';
-        const sig = a.nb_signalements > 0
-          ? `<span class="badge badge-red">⚠️ ${a.nb_signalements}</span>`
-          : '<span style="color:var(--sub)">—</span>';
-        const catColor = {logement:'#EBF2FA',emploi:'#ECFDF5',services:'#F5F3FF',dons:'#FEF2F2',bons_plans:'#FFFBEB'}[a.categorie]??'#F3F4F6';
-        const catText  = {logement:'#1E5AA8',emploi:'#1A7B23',services:'#7C3AED',dons:'#C0392B',bons_plans:'#92400E'}[a.categorie]??'#647488';
-        return `<tr onclick="openAnn('${a.id}')">
-          <td><div style="font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.titre??'—'}</div></td>
-          <td><span class="badge" style="background:${catColor};color:${catText}">${CAT_ICON[a.categorie]??'📋'} ${a.categorie??'—'}</span></td>
-          <td>${auteur}</td>
-          <td>${a.prix ? a.prix+'€' : '—'}</td>
-          <td>${sig}</td>
-          <td>${statusBadge(a.statut)}</td>
-          <td style="white-space:nowrap">${fmtDate(a.created_at)}</td>
-          <td><button class="btn btn-ghost btn-sm">Voir</button></td>
-        </tr>`;
-      }).join('');
+function openAnn(id) {
+  selectedAnn = allAnn.find(a => a.id === id);
+  if (!selectedAnn) return;
+  const a = selectedAnn;
+  document.getElementById('ad-title').textContent = a.titre;
+  document.getElementById('ad-sub').textContent   = `${a.ville} · ${fmtDate(a.created_at)}`;
+  document.getElementById('ad-badge').innerHTML   = statusBadge(a.statut);
+  document.getElementById('ad-thumb-emoji').textContent = CAT_EMOJI[a.categorie] || '📋';
+  document.getElementById('ad-info-titre').textContent = a.titre;
+  document.getElementById('ad-info-cat').innerHTML     = typeBadge(a.categorie) || a.categorie;
+  document.getElementById('ad-info-auteur').textContent = a.auteur_prenom + ' ' + a.auteur_nom;
+  document.getElementById('ad-info-prix').textContent  = a.prix ? num(a.prix) + ' €' : 'Gratuit';
+  document.getElementById('ad-info-ville').textContent = a.ville;
+  document.getElementById('ad-info-statut').innerHTML  = statusBadge(a.statut);
+  document.getElementById('ad-info-date').textContent  = fmtDate(a.created_at);
+  document.getElementById('ad-info-desc').textContent  = a.description;
+  document.getElementById('ad-btn-restore').style.display  = a.statut === 'suspendu' ? '' : 'none';
+  document.getElementById('ad-btn-suspend').style.display  = a.statut !== 'suspendu' ? '' : 'none';
 
-      renderPagination('ann-pagination', filtered.length, currentPage);
-      document.getElementById('ann-sub').textContent =
-        `${filtered.length} annonce${filtered.length!==1?'s':''}${activeStatus ? ' — filtrées' : ''}`;
-    }
+  const sigs = MOCK.SIGNALEMENTS.filter(s => s.annonce_id === a.id);
+  document.getElementById('ad-signalements').innerHTML = sigs.length
+    ? sigs.map(s => `<div class="activity-item"><div class="activity-icon" style="background:#FEF2F2">⚠️</div><div class="activity-content"><div class="activity-text"><strong>${s.reporter_name}</strong> — ${s.motif}</div><div class="activity-time">${fmtDate(s.created_at)} · ${statusBadge(s.statut)}</div></div></div>`).join('')
+    : `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Aucun signalement</div></div>`;
 
-    function openAnn(id) {
-      selectedAnn = allAnnonces.find(a => a.id === id);
-      if (!selectedAnn) return;
-      const a = selectedAnn;
-      const auteur = a.auteur ? `${a.auteur.prenom??''} ${a.auteur.nom??''}`.trim() : '—';
+  document.getElementById('ad-historique').innerHTML = [
+    { type:'info',    title:'Annonce publiée', sub:'Créée par ' + a.auteur_prenom + ' ' + a.auteur_nom, time: fmtDate(a.created_at) },
+    ...(a.statut === 'suspendu' ? [{ type:'error', title:'Annonce suspendue', sub:'Par un administrateur', time: fmtDate(a.created_at) }] : []),
+    ...(a.nb_signalements > 0  ? [{ type:'error', title:`${a.nb_signalements} signalement(s) reçu(s)`, sub:'', time: fmtDate(a.created_at) }] : []),
+  ].map(e => `<div class="timeline-item"><div class="timeline-dot ${e.type}"></div><div class="timeline-body"><div class="timeline-title">${e.title}</div><div class="timeline-sub">${e.sub}</div><div class="timeline-time">${e.time}</div></div></div>`).join('');
 
-      document.getElementById('modal-ann-title').textContent = a.titre ?? '—';
-      document.getElementById('modal-ann-sub').textContent =
-        `${CAT_ICON[a.categorie]??'📋'} ${a.categorie??''} · ${a.ville??''}`;
+  document.querySelectorAll('#ann-tabs .tab-btn').forEach((b, i) => b.classList.toggle('active', i === 0));
+  document.querySelectorAll('#ann-drawer .tab-content').forEach((c, i) => c.classList.toggle('active', i === 0));
+  openDrawer('ann-drawer');
+}
 
-      const fields = [
-        ['Statut', statusBadge(a.statut)],
-        ['Auteur', auteur],
-        ['Prix', a.prix ? a.prix+'€' : '—'],
-        ['Ville', a.ville??'—'],
-        ['Signalements', a.nb_signalements>0 ? `<span class="badge badge-red">⚠️ ${a.nb_signalements}</span>` : '0'],
-        ['Publiée le', fmtDate(a.created_at)],
-        ['Description', a.description??'—'],
-      ];
+function changeStatus(s) {
+  if (!selectedAnn) return;
+  const label = s === 'actif' ? 'Restaurer cette annonce ?' : 'Suspendre cette annonce ?';
+  showConfirm(label, () => {
+    const idx = allAnn.findIndex(a => a.id === selectedAnn.id);
+    if (idx !== -1) allAnn[idx].statut = s;
+    selectedAnn.statut = s;
+    toast(s === 'actif' ? 'Annonce restaurée ✓' : 'Annonce suspendue', s === 'actif' ? 'success' : 'warning');
+    openAnn(selectedAnn.id);
+    applyFilters();
+  }, { label: s === 'actif' ? 'Restaurer' : 'Suspendre', danger: s !== 'actif' });
+}
 
-      document.getElementById('modal-ann-fields').innerHTML = fields.map(([k,v],i) =>
-        `<div${i===fields.length-1?' class="detail-full"':''}><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`
-      ).join('');
+function deleteAnn() {
+  if (!selectedAnn) return;
+  showConfirm(`Supprimer définitivement "${selectedAnn.titre}" ?`, () => {
+    const idx = allAnn.findIndex(a => a.id === selectedAnn.id);
+    if (idx !== -1) allAnn.splice(idx, 1);
+    toast('Annonce supprimée');
+    closeDrawer('ann-drawer');
+    applyFilters();
+  }, { danger: true, label: 'Supprimer', title: 'Supprimer l\'annonce' });
+}
 
-      document.getElementById('btn-restore').style.display     = a.statut==='suspendu' ? 'inline-flex' : 'none';
-      document.getElementById('btn-suspend-ann').style.display = a.statut!=='suspendu' ? 'inline-flex' : 'none';
-      openModal('modal-ann');
-    }
+function exportAnn() { exportCSV(filtered.map(a => ({ titre: a.titre, categorie: a.categorie, statut: a.statut, auteur: a.auteur_prenom + ' ' + a.auteur_nom, prix: a.prix, ville: a.ville, date: fmtDate(a.created_at) })), 'annonces_cde.csv'); }
 
-    function closeAnn() { closeModal('modal-ann'); selectedAnn = null; }
-
-    async function changeStatus(newStatus) {
-      if (!selectedAnn) return;
-      const label = newStatus === 'actif' ? 'Restaurer cette annonce ?' : 'Suspendre cette annonce ?';
-      showConfirm(label, async () => {
-        showSpinner();
-        const updates = { statut: newStatus };
-        if (newStatus === 'actif') updates.nb_signalements = 0;
-        await sb.from('annonces').update(updates).eq('id', selectedAnn.id);
-        hideSpinner();
-        toast(newStatus === 'actif' ? 'Annonce restaurée ✓' : 'Annonce suspendue');
-        closeAnn();
-        await loadAnnonces();
-      }, { label: newStatus === 'actif' ? 'Restaurer' : 'Suspendre', danger: newStatus !== 'actif' });
-    }
-
-    function deleteAnn() {
-      if (!selectedAnn) return;
-      showConfirm(`Supprimer définitivement "${selectedAnn.titre}" ?`, async () => {
-        showSpinner();
-        await sb.from('annonces').delete().eq('id', selectedAnn.id);
-        hideSpinner();
-        toast('Annonce supprimée');
-        closeAnn();
-        await loadAnnonces();
-      }, { danger: true, label: 'Supprimer', title: 'Supprimer l\'annonce' });
-    }
-
-    async function loadAnnonces() {
-      const { data } = await sb.from('annonces')
-        .select('*,auteur:auteur_id(nom,prenom)')
-        .order('created_at', { ascending: false });
-      allAnnonces = data ?? [];
-
-      if (urlStatus) {
-        document.querySelectorAll('.filter-pill').forEach(b => {
-          const active = b.getAttribute('onclick')?.includes(`'${urlStatus}'`);
-          b.classList.toggle('active', active);
-        });
-      }
-      applyFilters();
-    }
-
-    (async () => {
-      const auth = await initPage('annonces');
-      if (!auth) return;
-      await loadAnnonces();
-    })();
-  </script>
+(async () => {
+  await initPage('annonces');
+  document.getElementById('icon-search').innerHTML = ICONS.search;
+  document.getElementById('icon-dl').innerHTML     = ICONS.download;
+  allAnn = MOCK.ANNONCES;
+  applyFilters();
+})();
+</script>
 </body>
 </html>

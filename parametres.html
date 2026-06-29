@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paramètres — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Paramètres</div>
+            <div class="page-sub">Configuration générale de la plateforme</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Left/Right layout -->
+      <div style="display:grid;grid-template-columns:220px 1fr;gap:20px;align-items:start">
+
+        <!-- Settings nav -->
+        <div class="card" style="position:sticky;top:76px">
+          <div style="padding:8px">
+            <button class="nav-item active" style="color:white;background:var(--brand);width:100%" onclick="showSection(this,'brand')">🎨 Marque</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'universities')">🎓 Universités</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'categories')">📋 Catégories</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'badges')">🏅 Badges</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'email')">📧 Email (SMTP)</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'sms')">💬 SMS (Twilio)</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'rgpd')">🔒 RGPD</button>
+            <button class="nav-item" style="width:100%" onclick="showSection(this,'api')">🔑 API Keys</button>
+          </div>
+        </div>
+
+        <!-- Settings content -->
+        <div>
+
+          <!-- Brand -->
+          <div id="section-brand">
+            <div class="card mb-16">
+              <div class="card-header"><div class="card-title">Marque & Identité</div></div>
+              <div class="card-body">
+                <div class="form-row mb-12">
+                  <div class="form-group">
+                    <label class="form-label">Nom de la plateforme</label>
+                    <input class="form-input" id="brand-name" type="text" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Couleur principale</label>
+                    <div style="display:flex;gap:10px;align-items:center">
+                      <input class="form-input" id="brand-color" type="text" style="flex:1" />
+                      <input type="color" id="brand-picker" style="width:38px;height:38px;border:none;cursor:pointer;border-radius:var(--r-md)" oninput="document.getElementById('brand-color').value=this.value" />
+                    </div>
+                  </div>
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">URL de la plateforme</label>
+                  <input class="form-input" type="text" value="https://coindesetudiants.fr" />
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Email de contact (affiché aux utilisateurs)</label>
+                  <input class="form-input" type="email" value="contact@coindesetudiants.com" />
+                </div>
+                <div style="display:flex;justify-content:flex-end">
+                  <button class="btn btn-primary" onclick="saveBrand()">Sauvegarder</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Universities -->
+          <div id="section-universities" style="display:none">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Universités autorisées</div>
+                <button class="btn btn-primary btn-sm" onclick="addUniversity()"><span id="icon-plus2"></span> Ajouter</button>
+              </div>
+              <div class="card-body" style="padding-top:0">
+                <table class="data-table">
+                  <thead><tr><th>Nom</th><th>Ville</th><th>Statut</th><th></th></tr></thead>
+                  <tbody id="univ-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div id="section-categories" style="display:none">
+            <div class="card">
+              <div class="card-header">
+                <div class="card-title">Catégories d'annonces</div>
+              </div>
+              <div class="card-body" style="padding-top:0">
+                <table class="data-table">
+                  <thead><tr><th>Icône</th><th>Nom</th><th>Statut</th><th></th></tr></thead>
+                  <tbody id="cat-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Badges -->
+          <div id="section-badges" style="display:none">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Badges disponibles</div></div>
+              <div class="card-body">
+                <div style="display:flex;flex-direction:column;gap:10px" id="badges-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div id="section-email" style="display:none">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Configuration SMTP</div></div>
+              <div class="card-body">
+                <div class="form-row mb-12">
+                  <div class="form-group">
+                    <label class="form-label">Hôte SMTP</label>
+                    <input class="form-input" value="smtp.sendgrid.net" />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Port</label>
+                    <input class="form-input" type="number" value="587" />
+                  </div>
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Email expéditeur</label>
+                  <input class="form-input" type="email" value="noreply@coindesetudiants.com" />
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Clé API SendGrid</label>
+                  <input class="form-input" type="password" value="SG.••••••••••••••" />
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button class="btn btn-ghost" onclick="toast('Email test envoyé à admin@coindesetudiants.com','info')">Envoyer email test</button>
+                  <button class="btn btn-primary" onclick="toast('Config SMTP sauvegardée ✓')">Sauvegarder</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SMS -->
+          <div id="section-sms" style="display:none">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Configuration Twilio (SMS)</div></div>
+              <div class="card-body">
+                <div class="form-group mb-12">
+                  <label class="form-label">Account SID</label>
+                  <input class="form-input" type="text" value="AC••••••••••••••••••••••••••••••••" />
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Auth Token</label>
+                  <input class="form-input" type="password" value="••••••••••••••••" />
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Numéro Twilio</label>
+                  <input class="form-input" type="text" value="+33700000000" />
+                </div>
+                <div style="display:flex;gap:8px;justify-content:flex-end">
+                  <button class="btn btn-ghost" onclick="toast('SMS test envoyé','info')">Tester</button>
+                  <button class="btn btn-primary" onclick="toast('Config Twilio sauvegardée ✓')">Sauvegarder</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RGPD -->
+          <div id="section-rgpd" style="display:none">
+            <div class="card">
+              <div class="card-header"><div class="card-title">RGPD & Conformité</div></div>
+              <div class="card-body">
+                <div class="form-group mb-12">
+                  <label class="form-label">Email du DPO</label>
+                  <input class="form-input" type="email" value="dpo@coindesetudiants.com" />
+                </div>
+                <div class="form-group mb-12">
+                  <label class="form-label">Durée de rétention des données (jours)</label>
+                  <input class="form-input" type="number" value="730" />
+                </div>
+                <div class="alert alert-warning mb-12" style="margin-bottom:12px"><span>⚠️</span><span>Les suppressions de données sont irréversibles. Exécutez d'abord un export complet.</span></div>
+                <div style="display:flex;gap:8px">
+                  <button class="btn btn-ghost" onclick="toast('Export RGPD généré','info')">Exporter toutes les données</button>
+                  <button class="btn btn-red" onclick="showConfirm('Anonymiser tous les comptes supprimés depuis >2 ans ?', ()=>toast('Anonymisation planifiée','info'), {danger:true,label:'Anonymiser'})">Anonymiser comptes inactifs</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- API -->
+          <div id="section-api" style="display:none">
+            <div class="card">
+              <div class="card-header"><div class="card-title">Clés API</div></div>
+              <div class="card-body">
+                <div class="alert alert-warning mb-12" style="margin-bottom:12px"><span>🔒</span><span>Ne partagez jamais ces clés. La service_role key bypass le RLS.</span></div>
+                <div class="info-list">
+                  <div class="info-row"><span class="info-row-key">Supabase URL</span><span class="info-row-value" style="font-family:monospace;font-size:11px">https://sovelwnthvqtgtvxfpsj.supabase.co</span></div>
+                  <div class="info-row"><span class="info-row-key">Anon Key</span><span class="info-row-value" style="font-family:monospace;font-size:11px">eyJ•••• (⚠ exposée côté client)</span></div>
+                  <div class="info-row"><span class="info-row-key">Service Role Key</span><span class="info-row-value" style="font-family:monospace;font-size:11px">eyJ•••• (🔴 backend only)</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+function showSection(btn, id) {
+  document.querySelectorAll('[id^="section-"]').forEach(s => s.style.display = 'none');
+  document.getElementById('section-' + id).style.display = '';
+  document.querySelectorAll('.card .nav-item').forEach(b => { b.classList.remove('active'); b.style.color = ''; b.style.background = ''; });
+  btn.classList.add('active'); btn.style.color = 'white'; btn.style.background = 'var(--brand)';
+}
+
+function saveBrand() {
+  const name  = document.getElementById('brand-name').value;
+  const color = document.getElementById('brand-color').value;
+  document.documentElement.style.setProperty('--brand', color);
+  toast(`Marque "${name}" sauvegardée ✓`);
+}
+
+function addUniversity() {
+  const nom = prompt('Nom de l\'université :');
+  if (!nom) return;
+  MOCK.PARAMS.universities.push({ id: 'new', nom, ville: '—', actif: true });
+  renderUnivs();
+  toast('Université ajoutée ✓');
+}
+
+function renderUnivs() {
+  document.getElementById('univ-tbody').innerHTML = MOCK.PARAMS.universities.map((u, i) => `<tr>
+    <td class="td-primary">${u.nom}</td>
+    <td>${u.ville}</td>
+    <td>${u.actif ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+    <td>
+      <button class="btn btn-ghost btn-sm" onclick="MOCK.PARAMS.universities[${i}].actif=!MOCK.PARAMS.universities[${i}].actif;renderUnivs();toast('Statut mis à jour')">Basculer</button>
+      <button class="btn btn-ghost btn-sm" onclick="MOCK.PARAMS.universities.splice(${i},1);renderUnivs();toast('Supprimée','warning')">Supprimer</button>
+    </td>
+  </tr>`).join('');
+}
+
+(async () => {
+  await initPage('parametres');
+  const P = MOCK.PARAMS;
+  document.getElementById('brand-name').value  = P.brand_name;
+  document.getElementById('brand-color').value = P.brand_color;
+  document.getElementById('brand-picker').value = P.brand_color;
+  document.getElementById('icon-plus2').innerHTML = ICONS.plus;
+
+  renderUnivs();
+
+  document.getElementById('cat-tbody').innerHTML = P.categories.map((c, i) => `<tr>
+    <td style="font-size:18px">${c.icon}</td>
+    <td class="td-primary">${c.nom}</td>
+    <td>${c.actif ? '<span class="badge badge-green">Active</span>' : '<span class="badge badge-gray">Inactive</span>'}</td>
+    <td><button class="btn btn-ghost btn-sm">Modifier</button></td>
+  </tr>`).join('');
+
+  document.getElementById('badges-list').innerHTML = P.badges.map(b => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-md)">
+      <span class="badge badge-violet">🏅 ${b}</span>
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm">Modifier</button>
+        <button class="btn btn-ghost btn-sm btn-icon">${ICONS.trash}</button>
+      </div>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>

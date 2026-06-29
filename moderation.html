@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Modération — Admin CDE</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<script>
+  window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+  window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+  window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
+</script>
+
+<div class="cde-shell">
+  <div id="sidebar-placeholder"></div>
+  <div class="cde-body">
+    <div id="header-placeholder"></div>
+    <div class="cde-content">
+
+      <div class="page-header">
+        <div class="page-header-row">
+          <div>
+            <div class="page-title">Modération</div>
+            <div class="page-sub">Signalements, comptes suspendus, documents suspects</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI -->
+      <div class="kpi-grid kpi-grid-3 mb-20">
+        <div class="kpi-card">
+          <div class="kpi-card-label">Signalements actifs</div>
+          <div class="kpi-value" id="m-sigs">—</div>
+          <div class="kpi-delta down">En attente de traitement</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Comptes suspendus</div>
+          <div class="kpi-value" id="m-susp">—</div>
+          <div class="kpi-delta flat">Actuellement bloqués</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-card-label">Annonces signalées</div>
+          <div class="kpi-value" id="m-ann">—</div>
+          <div class="kpi-delta down">Avec ≥1 signalement</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-bar mb-16" id="mod-tabs">
+        <button class="tab-btn active" onclick="switchTab('mod-tabs','mtab-','signalements',this)">Signalements <span class="tab-badge" id="tb-sig">0</span></button>
+        <button class="tab-btn" onclick="switchTab('mod-tabs','mtab-','suspendus',this)">Comptes suspendus</button>
+        <button class="tab-btn" onclick="switchTab('mod-tabs','mtab-','suspects',this)">Docs suspects</button>
+      </div>
+
+      <!-- Tab: signalements -->
+      <div class="tab-content active" id="mtab-signalements">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Annonce</th>
+                <th>Motif</th>
+                <th>Signalé par</th>
+                <th>Statut</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sig-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: suspendus -->
+      <div class="tab-content" id="mtab-suspendus">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Rôle</th>
+                <th>Suspendu jusqu'au</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="susp-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: docs suspects -->
+      <div class="tab-content" id="mtab-suspects">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Type</th>
+                <th>Score IA</th>
+                <th>Signalement IA</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="susp-docs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="mock-data.js"></script>
+<script src="components.js"></script>
+<script>
+let allSigs = [], sigFiltered = [];
+
+function treatSig(id, newStatut) {
+  const idx = allSigs.findIndex(s => s.id === id);
+  if (idx === -1) return;
+  allSigs[idx].statut = newStatut;
+  toast(newStatut === 'traite' ? 'Signalement traité ✓' : 'Signalement ignoré', newStatut === 'traite' ? 'success' : 'info');
+  renderSigs();
+}
+
+function renderSigs() {
+  const pending = allSigs.filter(s => s.statut === 'en_attente');
+  document.getElementById('tb-sig').textContent = pending.length;
+  document.getElementById('m-sigs').textContent = num(pending.length);
+
+  document.getElementById('sig-tbody').innerHTML = allSigs.map(s => {
+    const cat = s.annonce_cat ? s.annonce_cat : '';
+    return `<tr>
+      <td><div class="td-primary truncate" style="max-width:180px">${s.annonce_titre}</div></td>
+      <td><span class="badge badge-red">⚠️ ${s.motif}</span></td>
+      <td>${s.reporter_name}</td>
+      <td>${statusBadge(s.statut)}</td>
+      <td class="text-sm text-muted">${fmtDate(s.created_at)}</td>
+      <td>
+        <div style="display:flex;gap:6px">
+          ${s.statut === 'en_attente' ? `
+            <button class="btn btn-green btn-sm" onclick="treatSig('${s.id}','traite')">✓ Traiter</button>
+            <button class="btn btn-ghost btn-sm" onclick="treatSig('${s.id}','ignore')">Ignorer</button>
+            <a class="btn btn-ghost btn-sm" href="annonces.html">Voir annonce</a>
+          ` : `<span class="text-muted text-sm">—</span>`}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function liftSuspension(userId) {
+  const user = MOCK.USERS.find(u => u.id === userId);
+  if (!user) return;
+  showConfirm(`Lever la suspension de ${user.prenom} ${user.nom} ?`, () => {
+    user.banned_until = null;
+    toast('Suspension levée ✓');
+    renderSuspended();
+  }, { label: 'Lever' });
+}
+
+function renderSuspended() {
+  const suspended = MOCK.USERS.filter(u => u.banned_until && new Date(u.banned_until) > new Date());
+  document.getElementById('m-susp').textContent = num(suspended.length);
+  document.getElementById('susp-tbody').innerHTML = suspended.length
+    ? suspended.map(u => `<tr>
+        <td><div style="display:flex;align-items:center;gap:10px">${avatarHTML(u.prenom,u.nom,'sm')}<div class="td-primary">${u.prenom} ${u.nom}</div></div></td>
+        <td>${roleBadge(u.role)}</td>
+        <td>${fmtDate(u.banned_until)}</td>
+        <td>
+          <button class="btn btn-green btn-sm" onclick="liftSuspension('${u.id}')">Lever suspension</button>
+          <a class="btn btn-ghost btn-sm" href="utilisateurs.html">Profil</a>
+        </td>
+      </tr>`).join('')
+    : `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Aucun compte suspendu</div></div></td></tr>`;
+}
+
+function renderSuspectDocs() {
+  const suspects = MOCK.DOCUMENTS.filter(d => d.ai_flags.length > 0 && d.statut === 'en_attente');
+  document.getElementById('susp-docs-tbody').innerHTML = suspects.length
+    ? suspects.map(d => `<tr>
+        <td>${d.user_prenom} ${d.user_nom}</td>
+        <td>${typeBadge(d.type)}</td>
+        <td><span style="font-weight:700;color:${d.ai_score<75?'var(--red)':'var(--orange)'}">${d.ai_score}%</span></td>
+        <td>${d.ai_flags.map(f => `<span class="badge badge-orange">⚠ ${f}</span>`).join(' ')}</td>
+        <td>${fmtDate(d.created_at)}</td>
+        <td><a class="btn btn-primary btn-sm" href="documents.html">Examiner</a></td>
+      </tr>`).join('')
+    : `<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Aucun document suspect</div></div></td></tr>`;
+}
+
+(async () => {
+  await initPage('moderation');
+  allSigs = MOCK.SIGNALEMENTS;
+  document.getElementById('m-ann').textContent = num(MOCK.ANNONCES.filter(a => a.nb_signalements > 0).length);
+  renderSigs();
+  renderSuspended();
+  renderSuspectDocs();
+})();
+</script>
+</body>
+</html>
