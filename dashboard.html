@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Administration</div>
+          <div class="topbar-date" id="today-date"></div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="section-title">Vue d'ensemble</div>
+
+        <div class="stats-grid" id="stats-grid">
+          <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value" style="color:#4CAF50">—</div><div class="stat-label">Étudiants</div></div>
+          <div class="stat-card"><div class="stat-icon">🏠</div><div class="stat-value" style="color:#1E5AA8">—</div><div class="stat-label">Bailleurs</div></div>
+          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" style="color:#F59E0B">—</div><div class="stat-label">Annonces actives</div></div>
+          <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" style="color:#DC2626">—</div><div class="stat-label">Certificats en attente</div></div>
+        </div>
+
+        <div class="section-h2">Actions rapides</div>
+        <div class="actions-row">
+          <a href="certificats.html" class="action-card">
+            <div class="action-icon-wrap" style="background:#FEE2E2">📄</div>
+            <div class="action-label">Valider<br>certificats</div>
+            <div class="action-badge" id="cert-badge" style="display:none">0</div>
+          </a>
+          <a href="annonces.html" class="action-card">
+            <div class="action-icon-wrap" style="background:#FEF3C7">📋</div>
+            <div class="action-label">Nouvelles<br>annonces</div>
+          </a>
+          <a href="utilisateurs.html" class="action-card">
+            <div class="action-icon-wrap" style="background:#EBF2FA">👥</div>
+            <div class="action-label">Gérer<br>utilisateurs</div>
+          </a>
+        </div>
+
+        <div class="section-h2">Derniers inscrits</div>
+        <div class="activity-list" id="activity-list">
+          <div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    document.getElementById('today-date').textContent =
+      new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    (async () => {
+      const auth = await requireAdmin();
+      if (!auth) return;
+
+      document.getElementById('sidebar-placeholder').innerHTML = sidebar('dashboard');
+
+      const [
+        { count: nbEtudiants },
+        { count: nbBailleurs },
+        { count: nbAnnonces },
+        { count: nbCerts },
+        { data: recentUsers },
+      ] = await Promise.all([
+        sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'etudiant'),
+        sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'bailleur'),
+        sb.from('annonces').select('*', { count: 'exact', head: true }).eq('statut', 'actif'),
+        sb.from('certificats').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
+        sb.from('profiles').select('prenom, nom, role, created_at').neq('role', 'admin').order('created_at', { ascending: false }).limit(8),
+      ]);
+
+      const cells = document.querySelectorAll('.stat-value');
+      cells[0].textContent = nbEtudiants ?? 0;
+      cells[1].textContent = nbBailleurs ?? 0;
+      cells[2].textContent = nbAnnonces ?? 0;
+      cells[3].textContent = nbCerts ?? 0;
+
+      if (nbCerts > 0) {
+        const badge = document.getElementById('cert-badge');
+        badge.textContent = nbCerts;
+        badge.style.display = 'flex';
+      }
+
+      const ROLE_ICON = { etudiant: '🎓', bailleur: '🏠', particulier: '🧑' };
+      const ROLE_COLOR = { etudiant: '#4CAF50', bailleur: '#1E5AA8', particulier: '#7C3AED' };
+
+      const list = document.getElementById('activity-list');
+      if (!recentUsers || recentUsers.length === 0) {
+        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--sub)">Aucun utilisateur</div>';
+      } else {
+        list.innerHTML = recentUsers.map(u => `
+          <div class="activity-item">
+            <div class="activity-icon-wrap" style="background:${(ROLE_COLOR[u.role] ?? '#647488')}22">
+              ${ROLE_ICON[u.role] ?? '👤'}
+            </div>
+            <div>
+              <div class="activity-text">${u.prenom ?? ''} ${u.nom ?? ''} a rejoint la plateforme</div>
+              <div class="activity-time">${fmtDate(u.created_at)}</div>
+            </div>
+          </div>`).join('');
+      }
+    })();
+  </script>
+</body>
+</html>

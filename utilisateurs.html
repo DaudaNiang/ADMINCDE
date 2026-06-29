@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Utilisateurs — Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title">Utilisateurs</div>
+      </div>
+
+      <div class="content">
+        <div class="toolbar">
+          <input class="search-input" type="text" id="search-input" placeholder="Rechercher par nom ou email…" oninput="filterUsers()" />
+          <div class="filter-pills" id="role-filters">
+            <button class="filter-pill active" data-role="" onclick="setRole(this, '')">Tous</button>
+            <button class="filter-pill" data-role="etudiant" onclick="setRole(this, 'etudiant')">🎓 Étudiants</button>
+            <button class="filter-pill" data-role="bailleur" onclick="setRole(this, 'bailleur')">🏠 Bailleurs</button>
+            <button class="filter-pill" data-role="particulier" onclick="setRole(this, 'particulier')">🧑 Particuliers</button>
+          </div>
+        </div>
+
+        <div id="count-label" class="count-label"></div>
+        <div id="users-list"><div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal voir profil -->
+  <div class="modal-overlay hidden" id="modal-user">
+    <div class="modal-card modal-wide">
+      <div class="modal-header-row">
+        <div class="modal-user-avatar" id="modal-avatar"></div>
+        <div>
+          <div class="modal-title" id="modal-name"></div>
+          <div class="modal-sub" id="modal-email"></div>
+        </div>
+      </div>
+      <div class="modal-fields" id="modal-fields"></div>
+      <div class="modal-btn-row" style="margin-top:24px">
+        <button class="btn-cancel" onclick="closeModal('modal-user')">Fermer</button>
+        <button class="btn-confirm btn-confirm-red" id="btn-suspend" style="display:none">Suspendre le compte</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let allUsers = [];
+    let activeRole = '';
+
+    const ROLE_ICON  = { etudiant: '🎓', bailleur: '🏠', particulier: '🧑' };
+    const ROLE_LABEL = { etudiant: 'Étudiant', bailleur: 'Bailleur', particulier: 'Particulier' };
+    const ROLE_COLOR = { etudiant: '#4CAF50', bailleur: '#1E5AA8', particulier: '#7C3AED' };
+    const BADGE_COLOR = { 'Étudiant vérifié': '#4CAF50', 'Entreprise vérifiée': '#1E5AA8' };
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    function setRole(btn, role) {
+      activeRole = role;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterUsers();
+    }
+
+    function filterUsers() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = allUsers.filter(u => {
+        const matchRole = activeRole === '' || u.role === activeRole;
+        const matchQ = !q
+          || (u.prenom + ' ' + u.nom).toLowerCase().includes(q)
+          || (u.email ?? '').toLowerCase().includes(q);
+        return matchRole && matchQ;
+      });
+      renderUsers(filtered);
+    }
+
+    function renderUsers(list) {
+      const el = document.getElementById('users-list');
+      document.getElementById('count-label').textContent = `${list.length} utilisateur${list.length !== 1 ? 's' : ''}`;
+
+      if (list.length === 0) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><div>Aucun résultat</div></div>`;
+        return;
+      }
+
+      el.innerHTML = list.map(u => `
+        <div class="user-card" onclick="openUser('${u.id}')">
+          <div class="user-avatar" style="background:${(ROLE_COLOR[u.role] ?? '#647488')}22;color:${ROLE_COLOR[u.role] ?? '#647488'}">
+            ${initials(u.nom, u.prenom)}
+          </div>
+          <div style="flex:1">
+            <div class="user-name">${u.prenom ?? ''} ${u.nom ?? ''}</div>
+            <div class="user-meta">${ROLE_ICON[u.role] ?? '👤'} ${ROLE_LABEL[u.role] ?? u.role} · ${fmtDate(u.created_at)}</div>
+          </div>
+          ${u.badge ? `<span class="user-badge-tag" style="background:${(BADGE_COLOR[u.badge] ?? '#647488')}22;color:${BADGE_COLOR[u.badge] ?? '#647488'}">${u.badge}</span>` : ''}
+          ${u.verified ? `<span class="verified-dot" title="Vérifié">✓</span>` : ''}
+          <span class="chevron">›</span>
+        </div>`).join('');
+    }
+
+    function openUser(userId) {
+      const u = allUsers.find(x => x.id === userId);
+      if (!u) return;
+      document.getElementById('modal-avatar').textContent = initials(u.nom, u.prenom);
+      document.getElementById('modal-avatar').style.cssText = `background:${(ROLE_COLOR[u.role] ?? '#647488')}22;color:${ROLE_COLOR[u.role] ?? '#647488'}`;
+      document.getElementById('modal-name').textContent = `${u.prenom ?? ''} ${u.nom ?? ''}`;
+      document.getElementById('modal-email').textContent = u.email ?? '—';
+
+      const fields = [
+        ['Rôle', `${ROLE_ICON[u.role] ?? '👤'} ${ROLE_LABEL[u.role] ?? u.role}`],
+        ['Téléphone', u.telephone ?? '—'],
+        ['Vérifié', u.verified ? '✅ Oui' : '❌ Non'],
+        ['Badge', u.badge || '—'],
+        ['Inscrit le', fmtDate(u.created_at)],
+      ];
+      if (u.role === 'particulier') {
+        fields.push(['Type', u.sous_type ?? '—']);
+        if (u.siret) fields.push(['SIRET', u.siret]);
+        if (u.entreprise) fields.push(['Entreprise', u.entreprise]);
+      }
+      if (u.role === 'etudiant') {
+        fields.push(['Parcours', u.parcours ?? '—']);
+      }
+
+      document.getElementById('modal-fields').innerHTML = fields.map(([k, v]) =>
+        `<div class="modal-field-row"><span class="modal-field-key">${k}</span><span class="modal-field-val">${v}</span></div>`
+      ).join('');
+
+      document.getElementById('modal-user').classList.remove('hidden');
+    }
+
+    async function loadUsers() {
+      const { data } = await sb.from('profiles')
+        .select('*')
+        .neq('role', 'admin')
+        .order('created_at', { ascending: false });
+      allUsers = data ?? [];
+      filterUsers();
+    }
+
+    (async () => {
+      const auth = await requireAdmin();
+      if (!auth) return;
+      document.getElementById('sidebar-placeholder').innerHTML = sidebar('utilisateurs');
+      await loadUsers();
+    })();
+  </script>
+</body>
+</html>

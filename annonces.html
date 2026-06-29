@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Annonces — Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="layout">
+    <div id="sidebar-placeholder"></div>
+
+    <div class="main">
+      <div class="topbar">
+        <div class="topbar-title">Annonces</div>
+        <button class="btn-add-bonplan" onclick="openAddBonPlan()">+ Bon plan</button>
+      </div>
+
+      <div class="content">
+        <div class="toolbar">
+          <input class="search-input" type="text" id="search-input" placeholder="Rechercher par titre…" oninput="filterAnnonces()" />
+          <div class="filter-pills" id="status-filters">
+            <button class="filter-pill active" data-status="" onclick="setStatus(this, '')">Toutes</button>
+            <button class="filter-pill" data-status="actif" onclick="setStatus(this, 'actif')">Actives</button>
+            <button class="filter-pill" data-status="signale" onclick="setStatus(this, 'signale')">⚠️ Signalées</button>
+            <button class="filter-pill" data-status="suspendu" onclick="setStatus(this, 'suspendu')">Suspendues</button>
+          </div>
+        </div>
+
+        <div id="count-label" class="count-label"></div>
+        <div id="annonces-list"><div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal détail annonce -->
+  <div class="modal-overlay hidden" id="modal-annonce">
+    <div class="modal-card modal-wide">
+      <div class="modal-title" id="modal-ann-title" style="font-size:18px;margin-bottom:6px"></div>
+      <div class="modal-sub" id="modal-ann-sub"></div>
+      <div class="modal-fields" id="modal-ann-fields" style="margin-top:16px"></div>
+      <div class="modal-btn-row" style="margin-top:24px">
+        <button class="btn-cancel" onclick="closeModal('modal-annonce')">Fermer</button>
+        <button class="btn-confirm" id="btn-restore" style="display:none" onclick="changeStatus('actif')">Restaurer</button>
+        <button class="btn-confirm btn-confirm-red" id="btn-suspend-ann" style="display:none" onclick="changeStatus('suspendu')">Suspendre</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Bon plan -->
+  <div class="modal-overlay hidden" id="modal-bonplan">
+    <div class="modal-card modal-wide">
+      <div class="modal-title">Créer un bon plan</div>
+      <div class="form-group" style="margin-top:16px">
+        <label class="form-label">Titre</label>
+        <input class="form-input" id="bp-titre" placeholder="Ex: -20% chez Jules avec carte étudiante" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea class="motif-textarea" id="bp-description" placeholder="Détails du bon plan…" rows="3"></textarea>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group">
+          <label class="form-label">Catégorie</label>
+          <select class="form-input" id="bp-categorie">
+            <option value="mode">Mode</option>
+            <option value="restauration">Restauration</option>
+            <option value="transport">Transport</option>
+            <option value="loisirs">Loisirs</option>
+            <option value="autres">Autres</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Ville</label>
+          <input class="form-input" id="bp-ville" placeholder="Paris" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Réduction (ex: -20%, Gratuit…)</label>
+        <input class="form-input" id="bp-reduction" placeholder="-20%" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Lien externe (optionnel)</label>
+        <input class="form-input" id="bp-lien" type="url" placeholder="https://…" />
+      </div>
+      <div id="bp-error" style="color:#DC2626;font-size:13px;min-height:18px"></div>
+      <div class="modal-btn-row" style="margin-top:16px">
+        <button class="btn-cancel" onclick="closeModal('modal-bonplan')">Annuler</button>
+        <button class="btn-confirm" id="btn-bp-submit" onclick="submitBonPlan()">Publier</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let allAnnonces = [];
+    let activeStatus = '';
+    let selectedAnnId = null;
+
+    const STATUS_LABEL = { actif: 'Active', suspendu: 'Suspendue', signale: 'Signalée', expire: 'Expirée' };
+    const STATUS_COLOR = { actif: '#4CAF50', suspendu: '#DC2626', signale: '#D97706', expire: '#9CA3AF' };
+    const CAT_ICON = { logement: '🏠', emploi: '💼', services: '🤝', dons: '🎁', bons_plans: '⭐' };
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+      selectedAnnId = null;
+    }
+
+    function setStatus(btn, status) {
+      activeStatus = status;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterAnnonces();
+    }
+
+    function filterAnnonces() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = allAnnonces.filter(a => {
+        const matchStatus = activeStatus === '' || a.statut === activeStatus;
+        const matchQ = !q || (a.titre ?? '').toLowerCase().includes(q);
+        return matchStatus && matchQ;
+      });
+      renderAnnonces(filtered);
+    }
+
+    function renderAnnonces(list) {
+      const el = document.getElementById('annonces-list');
+      document.getElementById('count-label').textContent = `${list.length} annonce${list.length !== 1 ? 's' : ''}`;
+
+      if (list.length === 0) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📋</div><div>Aucune annonce</div></div>`;
+        return;
+      }
+
+      el.innerHTML = list.map(a => `
+        <div class="annonce-card" onclick="openAnnonce('${a.id}')">
+          <div class="annonce-cat-icon">${CAT_ICON[a.categorie] ?? '📋'}</div>
+          <div style="flex:1;min-width:0">
+            <div class="annonce-titre">${a.titre ?? '—'}</div>
+            <div class="annonce-meta">
+              ${a.ville ? `📍 ${a.ville} · ` : ''}
+              ${fmtDate(a.created_at)}
+              ${a.nb_signalements > 0 ? `· <span style="color:#D97706">⚠️ ${a.nb_signalements} signalement${a.nb_signalements > 1 ? 's' : ''}</span>` : ''}
+            </div>
+          </div>
+          <span class="ann-status-badge" style="background:${(STATUS_COLOR[a.statut] ?? '#9CA3AF')}22;color:${STATUS_COLOR[a.statut] ?? '#9CA3AF'}">
+            ${STATUS_LABEL[a.statut] ?? a.statut}
+          </span>
+          <span class="chevron">›</span>
+        </div>`).join('');
+    }
+
+    function openAnnonce(id) {
+      const a = allAnnonces.find(x => x.id === id);
+      if (!a) return;
+      selectedAnnId = id;
+
+      document.getElementById('modal-ann-title').textContent = a.titre ?? '—';
+      document.getElementById('modal-ann-sub').textContent =
+        `${CAT_ICON[a.categorie] ?? ''} ${a.categorie ?? ''} · ${a.ville ?? ''} · Publiée le ${fmtDate(a.created_at)}`;
+
+      const fields = [
+        ['Statut', `<span style="color:${STATUS_COLOR[a.statut] ?? '#9CA3AF'}">${STATUS_LABEL[a.statut] ?? a.statut}</span>`],
+        ['Description', a.description ?? '—'],
+      ];
+      if (a.prix != null) fields.push(['Prix', `${a.prix} €`]);
+      if (a.nb_signalements > 0) fields.push(['Signalements', `⚠️ ${a.nb_signalements}`]);
+      if (a.raison_signalement) fields.push(['Raison', a.raison_signalement]);
+
+      document.getElementById('modal-ann-fields').innerHTML = fields.map(([k, v]) =>
+        `<div class="modal-field-row"><span class="modal-field-key">${k}</span><span class="modal-field-val">${v}</span></div>`
+      ).join('');
+
+      const btnRestore = document.getElementById('btn-restore');
+      const btnSuspend = document.getElementById('btn-suspend-ann');
+      btnRestore.style.display = a.statut === 'suspendu' ? 'inline-flex' : 'none';
+      btnSuspend.style.display = a.statut !== 'suspendu' ? 'inline-flex' : 'none';
+
+      document.getElementById('modal-annonce').classList.remove('hidden');
+    }
+
+    async function changeStatus(newStatus) {
+      if (!selectedAnnId) return;
+      closeModal('modal-annonce');
+      const updates = { statut: newStatus };
+      if (newStatus === 'actif') updates.nb_signalements = 0;
+      await sb.from('annonces').update(updates).eq('id', selectedAnnId);
+      const idx = allAnnonces.findIndex(a => a.id === selectedAnnId);
+      if (idx !== -1) allAnnonces[idx] = { ...allAnnonces[idx], ...updates };
+      filterAnnonces();
+      toast(newStatus === 'actif' ? 'Annonce restaurée ✓' : 'Annonce suspendue');
+    }
+
+    function openAddBonPlan() {
+      ['bp-titre','bp-description','bp-ville','bp-reduction','bp-lien'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+      document.getElementById('bp-categorie').value = 'autres';
+      document.getElementById('bp-error').textContent = '';
+      document.getElementById('modal-bonplan').classList.remove('hidden');
+    }
+
+    async function submitBonPlan() {
+      const titre = document.getElementById('bp-titre').value.trim();
+      const description = document.getElementById('bp-description').value.trim();
+      const categorie = document.getElementById('bp-categorie').value;
+      const ville = document.getElementById('bp-ville').value.trim();
+      const reduction = document.getElementById('bp-reduction').value.trim();
+      const lien = document.getElementById('bp-lien').value.trim();
+
+      if (!titre) { document.getElementById('bp-error').textContent = 'Le titre est obligatoire.'; return; }
+      if (!description) { document.getElementById('bp-error').textContent = 'La description est obligatoire.'; return; }
+      document.getElementById('bp-error').textContent = '';
+
+      const btn = document.getElementById('btn-bp-submit');
+      btn.disabled = true; btn.textContent = 'Publication…';
+
+      const { session } = (await sb.auth.getSession()).data;
+      const { error } = await sb.from('annonces').insert({
+        titre,
+        description,
+        categorie: 'bons_plans',
+        sous_categorie: categorie,
+        ville: ville || null,
+        reduction: reduction || null,
+        lien_externe: lien || null,
+        statut: 'actif',
+        type: 'bon_plan',
+        auteur_id: session?.user?.id ?? null,
+      });
+
+      btn.disabled = false; btn.textContent = 'Publier';
+
+      if (error) {
+        document.getElementById('bp-error').textContent = error.message;
+        return;
+      }
+
+      closeModal('modal-bonplan');
+      toast('Bon plan publié ✓');
+      await loadAnnonces();
+    }
+
+    async function loadAnnonces() {
+      const { data } = await sb.from('annonces')
+        .select('*')
+        .order('created_at', { ascending: false });
+      allAnnonces = data ?? [];
+      filterAnnonces();
+    }
+
+    (async () => {
+      const auth = await requireAdmin();
+      if (!auth) return;
+      document.getElementById('sidebar-placeholder').innerHTML = sidebar('annonces');
+      await loadAnnonces();
+    })();
+  </script>
+</body>
+</html>
