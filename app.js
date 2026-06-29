@@ -122,7 +122,7 @@ function renderPagination(containerId, total, page) {
 async function requireAdmin() {
   const { data:{ session } } = await sb.auth.getSession();
   if (!session) { window.location.href='index.html'; return null; }
-  const { data:profile } = await sb.from('profiles').select('role,nom,prenom,email').eq('id',session.user.id).single();
+  const { data:profile } = await sb.from('profiles').select('role,nom,prenom').eq('id',session.user.id).single();
   if (!profile || profile.role !== 'admin') {
     await sb.auth.signOut();
     window.location.href='index.html';
