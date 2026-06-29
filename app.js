@@ -199,6 +199,6 @@ async function initPage(pageId) {
   const auth = await requireAdmin();
   if (!auth) return null;
   document.getElementById('sidebar-placeholder').innerHTML = await buildSidebar(pageId);
-  injectAdminChip(auth.profile);
+  injectAdminChip(auth);
   return auth;
 }
