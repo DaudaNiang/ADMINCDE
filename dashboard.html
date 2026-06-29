@@ -3,112 +3,198 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard — Admin</title>
+  <title>Dashboard — Admin CDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="layout">
+  <script>
+    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+  </script>
+
+  <div class="app-layout">
     <div id="sidebar-placeholder"></div>
-
-    <div class="main">
-      <div class="topbar">
+    <div class="main-content">
+      <header class="topbar">
         <div>
-          <div class="topbar-title">Administration</div>
-          <div class="topbar-date" id="today-date"></div>
+          <div class="page-title">Tableau de bord</div>
+          <div class="page-sub" id="today-date"></div>
         </div>
-      </div>
-
-      <div class="content">
-        <div class="section-title">Vue d'ensemble</div>
-
-        <div class="stats-grid" id="stats-grid">
-          <div class="stat-card"><div class="stat-icon">🎓</div><div class="stat-value" style="color:#4CAF50">—</div><div class="stat-label">Étudiants</div></div>
-          <div class="stat-card"><div class="stat-icon">🏠</div><div class="stat-value" style="color:#1E5AA8">—</div><div class="stat-label">Bailleurs</div></div>
-          <div class="stat-card"><div class="stat-icon">📋</div><div class="stat-value" style="color:#F59E0B">—</div><div class="stat-label">Annonces actives</div></div>
-          <div class="stat-card"><div class="stat-icon">📄</div><div class="stat-value" style="color:#DC2626">—</div><div class="stat-label">Certificats en attente</div></div>
+        <div class="topbar-right">
+          <div class="admin-chip" id="admin-chip"></div>
         </div>
+      </header>
 
-        <div class="section-h2">Actions rapides</div>
-        <div class="actions-row">
-          <a href="certificats.html" class="action-card">
-            <div class="action-icon-wrap" style="background:#FEE2E2">📄</div>
-            <div class="action-label">Valider<br>certificats</div>
-            <div class="action-badge" id="cert-badge" style="display:none">0</div>
-          </a>
-          <a href="annonces.html" class="action-card">
-            <div class="action-icon-wrap" style="background:#FEF3C7">📋</div>
-            <div class="action-label">Nouvelles<br>annonces</div>
-          </a>
-          <a href="utilisateurs.html" class="action-card">
-            <div class="action-icon-wrap" style="background:#EBF2FA">👥</div>
-            <div class="action-label">Gérer<br>utilisateurs</div>
-          </a>
+      <main class="content">
+        <!-- 6 stat cards -->
+        <div class="stats-grid stats-grid-6" id="stats-grid">
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#ECFDF5">🎓</div><div><div class="stat-value" id="s-etudiants">—</div><div class="stat-label">Étudiants</div></div></div>
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#EBF2FA">🏠</div><div><div class="stat-value" id="s-bailleurs">—</div><div class="stat-label">Bailleurs</div></div></div>
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#F5F3FF">🧑</div><div><div class="stat-value" id="s-particuliers">—</div><div class="stat-label">Particuliers</div></div></div>
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#EBF2FA">📋</div><div><div class="stat-value" id="s-annonces">—</div><div class="stat-label">Annonces actives</div></div></div>
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#FFFBEB">📄</div><div><div class="stat-value" id="s-docs" style="color:var(--amber)">—</div><div class="stat-label">Docs en attente</div></div></div>
+          <div class="stat-card"><div class="stat-icon-wrap" style="background:#FEF2F2">💬</div><div><div class="stat-value" id="s-tickets" style="color:var(--red)">—</div><div class="stat-label">Tickets ouverts</div></div></div>
         </div>
 
-        <div class="section-h2">Derniers inscrits</div>
-        <div class="activity-list" id="activity-list">
-          <div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div>
+        <div class="dash-grid">
+          <!-- Chart inscriptions -->
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Inscriptions — 7 derniers jours</div></div>
+            </div>
+            <div class="card-body">
+              <div class="chart-wrap">
+                <canvas id="chart-reg"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5 derniers inscrits -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Derniers inscrits</div>
+              <a href="utilisateurs.html" class="btn btn-ghost btn-sm">Voir tout</a>
+            </div>
+            <div class="activity-list" id="recent-users">
+              <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- 5 derniers tickets -->
+          <div class="card full">
+            <div class="card-header">
+              <div class="card-title">Derniers tickets support non résolus</div>
+              <a href="support.html" class="btn btn-ghost btn-sm">Voir tout</a>
+            </div>
+            <div id="recent-tickets">
+              <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
+            </div>
+          </div>
+
+          <!-- Actions rapides -->
+          <div class="card full">
+            <div class="card-header"><div class="card-title">Actions rapides</div></div>
+            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
+              <a href="certificats.html" class="btn btn-primary">📄 Valider les documents</a>
+              <a href="annonces.html?filter=signale" class="btn btn-amber">⚠️ Gérer les signalements</a>
+              <a href="support.html" class="btn btn-ghost">💬 Répondre aux tickets</a>
+              <a href="utilisateurs.html" class="btn btn-ghost">👥 Gérer les utilisateurs</a>
+            </div>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
   <script>
     document.getElementById('today-date').textContent =
-      new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
     (async () => {
-      const auth = await requireAdmin();
+      const auth = await initPage('dashboard');
       if (!auth) return;
 
-      document.getElementById('sidebar-placeholder').innerHTML = sidebar('dashboard');
-
+      // Parallel stat queries
       const [
-        { count: nbEtudiants },
-        { count: nbBailleurs },
-        { count: nbAnnonces },
-        { count: nbCerts },
+        { count: ne }, { count: nb }, { count: np },
+        { count: na }, { count: nd }, { count: nt },
         { data: recentUsers },
+        { data: regData },
+        { data: recentTickets },
       ] = await Promise.all([
-        sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'etudiant'),
-        sb.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'bailleur'),
-        sb.from('annonces').select('*', { count: 'exact', head: true }).eq('statut', 'actif'),
-        sb.from('certificats').select('*', { count: 'exact', head: true }).eq('statut', 'en_attente'),
-        sb.from('profiles').select('prenom, nom, role, created_at').neq('role', 'admin').order('created_at', { ascending: false }).limit(8),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','etudiant'),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','bailleur'),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','particulier'),
+        sb.from('annonces').select('*',{count:'exact',head:true}).eq('statut','actif'),
+        sb.from('certificats').select('*',{count:'exact',head:true}).eq('statut','en_attente'),
+        sb.from('support_tickets').select('*',{count:'exact',head:true}).in('statut',['ouvert','en_cours']).catch(()=>({count:0})),
+        sb.from('profiles').select('prenom,nom,role,created_at').neq('role','admin').order('created_at',{ascending:false}).limit(5),
+        sb.from('profiles').select('created_at').neq('role','admin')
+          .gte('created_at', new Date(Date.now()-6*86400000).toISOString()),
+        sb.from('support_tickets').select('id,sujet,statut,created_at,profiles:user_id(nom,prenom)')
+          .in('statut',['ouvert','en_cours']).order('created_at',{ascending:false}).limit(5).catch(()=>({data:[]})),
       ]);
 
-      const cells = document.querySelectorAll('.stat-value');
-      cells[0].textContent = nbEtudiants ?? 0;
-      cells[1].textContent = nbBailleurs ?? 0;
-      cells[2].textContent = nbAnnonces ?? 0;
-      cells[3].textContent = nbCerts ?? 0;
+      document.getElementById('s-etudiants').textContent  = ne ?? 0;
+      document.getElementById('s-bailleurs').textContent  = nb ?? 0;
+      document.getElementById('s-particuliers').textContent = np ?? 0;
+      document.getElementById('s-annonces').textContent   = na ?? 0;
+      document.getElementById('s-docs').textContent       = nd ?? 0;
+      document.getElementById('s-tickets').textContent    = nt ?? 0;
 
-      if (nbCerts > 0) {
-        const badge = document.getElementById('cert-badge');
-        badge.textContent = nbCerts;
-        badge.style.display = 'flex';
-      }
-
-      const ROLE_ICON = { etudiant: '🎓', bailleur: '🏠', particulier: '🧑' };
-      const ROLE_COLOR = { etudiant: '#4CAF50', bailleur: '#1E5AA8', particulier: '#7C3AED' };
-
-      const list = document.getElementById('activity-list');
-      if (!recentUsers || recentUsers.length === 0) {
-        list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--sub)">Aucun utilisateur</div>';
+      // Recent users
+      const ul = document.getElementById('recent-users');
+      if (!recentUsers?.length) {
+        ul.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun inscrit</div></div>';
       } else {
-        list.innerHTML = recentUsers.map(u => `
+        ul.innerHTML = recentUsers.map(u => `
           <div class="activity-item">
-            <div class="activity-icon-wrap" style="background:${(ROLE_COLOR[u.role] ?? '#647488')}22">
-              ${ROLE_ICON[u.role] ?? '👤'}
+            <div class="activity-icon" style="background:${(ROLE_BG[u.role]??'#F3F4F6')}">
+              ${ROLE_ICON[u.role]??'👤'}
             </div>
             <div>
-              <div class="activity-text">${u.prenom ?? ''} ${u.nom ?? ''} a rejoint la plateforme</div>
-              <div class="activity-time">${fmtDate(u.created_at)}</div>
+              <div class="activity-text">${u.prenom??''} ${u.nom??''}</div>
+              <div class="activity-sub">${ROLE_LABEL[u.role]??u.role} · ${fmtDate(u.created_at)}</div>
             </div>
+            ${roleBadge(u.role)}
           </div>`).join('');
       }
+
+      // Recent tickets
+      const tl = document.getElementById('recent-tickets');
+      if (!recentTickets?.length) {
+        tl.innerHTML = '<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket ouvert</div></div>';
+      } else {
+        tl.innerHTML = `<table class="data-table"><thead><tr>
+          <th>Utilisateur</th><th>Sujet</th><th>Statut</th><th>Date</th>
+        </tr></thead><tbody>${recentTickets.map(t=>`
+          <tr onclick="location.href='support.html'">
+            <td>${t.profiles?.prenom??''} ${t.profiles?.nom??'—'}</td>
+            <td>${t.sujet??'—'}</td>
+            <td>${statusBadge(t.statut)}</td>
+            <td>${fmtDate(t.created_at)}</td>
+          </tr>`).join('')}</tbody></table>`;
+      }
+
+      // Chart
+      const days = [], labels = [];
+      for (let i=6;i>=0;i--) {
+        const d = new Date(); d.setDate(d.getDate()-i);
+        days.push(d.toISOString().split('T')[0]);
+        labels.push(d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}));
+      }
+      const counts = days.map(day => (regData??[]).filter(u=>u.created_at.startsWith(day)).length);
+
+      new Chart(document.getElementById('chart-reg'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Inscriptions',
+            data: counts,
+            backgroundColor: 'rgba(30,90,168,0.15)',
+            borderColor: '#1E5AA8',
+            borderWidth: 2,
+            borderRadius: 6,
+            borderSkipped: false,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { font:{ family:'Inter', size:11 }, color:'#647488' } },
+            y: { beginAtZero: true, ticks: { stepSize:1, font:{family:'Inter',size:11}, color:'#647488' }, grid: { color:'rgba(0,0,0,0.05)' } }
+          }
+        }
+      });
     })();
   </script>
 </body>

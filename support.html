@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Support — Admin CDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <script>
+    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+  </script>
+
+  <div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <div class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="page-title">Support</div>
+          <div class="page-sub" id="ticket-sub"></div>
+        </div>
+        <div class="topbar-right">
+          <div class="admin-chip" id="admin-chip"></div>
+        </div>
+      </header>
+
+      <main class="content">
+        <!-- Table not available fallback -->
+        <div id="table-error" style="display:none">
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <div class="empty-title">Table support_tickets non configurée</div>
+            <p class="empty-sub" style="margin-top:6px">Créez la table <code>support_tickets</code> et <code>support_messages</code> dans Supabase pour activer ce module.</p>
+          </div>
+        </div>
+
+        <div id="support-content">
+          <div class="toolbar">
+            <div class="filter-pills">
+              <button class="filter-pill active" onclick="setFilter(this,'open')">Ouverts &amp; en cours</button>
+              <button class="filter-pill" onclick="setFilter(this,'resolu')">Résolus</button>
+              <button class="filter-pill" onclick="setFilter(this,'all')">Tous</button>
+            </div>
+          </div>
+
+          <div id="tickets-list">
+            <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
+          </div>
+          <div id="tickets-pagination"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal ticket / conversation -->
+  <div class="modal-backdrop hidden" id="modal-ticket">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="ticket-modal-title"></div>
+          <div style="font-size:12px;color:var(--sub);margin-top:2px" id="ticket-modal-sub"></div>
+        </div>
+        <button class="modal-close" onclick="closeTicket()">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Conversation -->
+        <div class="conv-box" id="conv-box">
+          <div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>
+        </div>
+
+        <!-- Reply form -->
+        <div id="reply-form">
+          <div class="form-group" style="margin-bottom:8px">
+            <textarea class="form-textarea" id="reply-input" placeholder="Votre réponse…" rows="3" style="resize:none"></textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+            <button class="btn btn-green btn-sm" id="btn-resolve" onclick="resolveTicket()">✓ Marquer résolu</button>
+            <button class="btn btn-primary" id="btn-send" onclick="sendReply()">Envoyer la réponse</button>
+          </div>
+        </div>
+        <div id="resolved-msg" style="display:none;padding:12px;background:var(--green-light);border-radius:8px;font-size:13px;color:var(--green);font-weight:600;text-align:center">
+          ✅ Ce ticket est résolu
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="app.js"></script>
+  <script>
+    let allTickets = [], filtered = [], currentPage = 1, activeFilter = 'open';
+    let selectedTicket = null, adminSession = null;
+
+    function gotoPage(n) { currentPage = n; renderTickets(); }
+
+    function setFilter(btn, filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      applyFilter();
+    }
+
+    function applyFilter() {
+      filtered = allTickets.filter(t => {
+        if (activeFilter === 'open') return ['ouvert','en_cours'].includes(t.statut);
+        if (activeFilter === 'resolu') return t.statut === 'resolu';
+        return true;
+      });
+      currentPage = 1;
+      renderTickets();
+    }
+
+    function renderTickets() {
+      const el = document.getElementById('tickets-list');
+      const page = paginate(filtered, currentPage);
+
+      const open = allTickets.filter(t => ['ouvert','en_cours'].includes(t.statut)).length;
+      document.getElementById('ticket-sub').textContent =
+        open > 0 ? `${open} ticket${open>1?'s':''} en attente` : 'Aucun ticket en attente';
+
+      if (!filtered.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><div class="empty-title">Aucun ticket</div></div>`;
+        document.getElementById('tickets-pagination').innerHTML = '';
+        return;
+      }
+
+      el.innerHTML = page.map(t => {
+        const name = t.profiles ? `${t.profiles.prenom??''} ${t.profiles.nom??''}`.trim() : '—';
+        return `<div class="ticket-card" onclick="openTicket('${t.id}')">
+          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:38px;height:38px;flex-shrink:0">
+            ${initials(t.profiles?.nom, t.profiles?.prenom)}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${name}</div>
+            <div style="font-size:13px;font-weight:500;color:var(--text);margin-top:2px">${t.sujet??'—'}</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.message??''}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+            ${statusBadge(t.statut)}
+            <span style="font-size:11px;color:var(--sub)">${fmtDate(t.created_at)}</span>
+          </div>
+        </div>`;
+      }).join('');
+
+      renderPagination('tickets-pagination', filtered.length, currentPage);
+    }
+
+    async function openTicket(id) {
+      selectedTicket = allTickets.find(t => t.id === id);
+      if (!selectedTicket) return;
+      const t = selectedTicket;
+      const name = t.profiles ? `${t.profiles.prenom??''} ${t.profiles.nom??''}`.trim() : '—';
+
+      document.getElementById('ticket-modal-title').textContent = t.sujet ?? '—';
+      document.getElementById('ticket-modal-sub').innerHTML = `${name} · ${statusBadge(t.statut)} · ${fmtDate(t.created_at)}`;
+      document.getElementById('reply-input').value = '';
+      document.getElementById('modal-ticket').classList.remove('hidden');
+
+      const isResolved = t.statut === 'resolu';
+      document.getElementById('reply-form').style.display = isResolved ? 'none' : 'block';
+      document.getElementById('resolved-msg').style.display = isResolved ? 'block' : 'none';
+      document.getElementById('btn-resolve').style.display = isResolved ? 'none' : 'inline-flex';
+
+      // Load conversation
+      await loadConversation(t.id, t.message);
+    }
+
+    async function loadConversation(ticketId, firstMsg) {
+      const box = document.getElementById('conv-box');
+      box.innerHTML = '<div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>';
+
+      // Original message
+      let html = `<div class="msg-row user">
+        <div class="msg-bubble user">${firstMsg ?? '(aucun message)'}</div>
+      </div>`;
+
+      const { data: msgs, error } = await sb.from('support_messages')
+        .select('*')
+        .eq('ticket_id', ticketId)
+        .order('created_at');
+
+      if (!error && msgs?.length) {
+        html += msgs.map(m => `
+          <div class="msg-row ${m.is_admin ? 'admin-msg' : 'user'}">
+            <div class="msg-bubble ${m.is_admin ? 'admin' : 'user'}">${m.message??''}</div>
+          </div>
+          <div class="msg-time">${fmtDateTime(m.created_at)}</div>`).join('');
+      }
+
+      box.innerHTML = html;
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function closeTicket() {
+      document.getElementById('modal-ticket').classList.add('hidden');
+      selectedTicket = null;
+    }
+
+    async function sendReply() {
+      if (!selectedTicket) return;
+      const msg = document.getElementById('reply-input').value.trim();
+      if (!msg) { toast('Le message ne peut pas être vide.', 'error'); return; }
+
+      const btn = document.getElementById('btn-send');
+      btn.disabled = true; btn.innerHTML = '<span class="spin-sm"></span>';
+
+      try {
+        await sb.from('support_messages').insert({
+          ticket_id: selectedTicket.id,
+          auteur_id: adminSession?.user?.id,
+          message: msg,
+          is_admin: true,
+        });
+        await sb.from('support_tickets').update({ statut: 'en_cours' }).eq('id', selectedTicket.id);
+        document.getElementById('reply-input').value = '';
+        await loadConversation(selectedTicket.id, selectedTicket.message);
+        // Update local state
+        const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
+        if (idx !== -1) allTickets[idx].statut = 'en_cours';
+        toast('Réponse envoyée ✓');
+      } catch(e) { toast('Erreur : ' + e.message, 'error'); }
+
+      btn.disabled = false; btn.innerHTML = 'Envoyer la réponse';
+    }
+
+    async function resolveTicket() {
+      if (!selectedTicket) return;
+      showConfirm('Marquer ce ticket comme résolu ?', async () => {
+        await sb.from('support_tickets').update({ statut: 'resolu' }).eq('id', selectedTicket.id);
+        const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
+        if (idx !== -1) { allTickets[idx].statut = 'resolu'; selectedTicket.statut = 'resolu'; }
+        document.getElementById('reply-form').style.display = 'none';
+        document.getElementById('resolved-msg').style.display = 'block';
+        document.getElementById('btn-resolve').style.display = 'none';
+        document.getElementById('ticket-modal-sub').innerHTML =
+          `${document.getElementById('ticket-modal-sub').textContent.split('·')[0].trim()} · ${statusBadge('resolu')}`;
+        applyFilter();
+        toast('Ticket résolu ✓');
+      }, { label: 'Résoudre' });
+    }
+
+    async function loadTickets() {
+      const { data, error } = await sb.from('support_tickets')
+        .select('*,profiles:user_id(nom,prenom)')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        document.getElementById('support-content').style.display = 'none';
+        document.getElementById('table-error').style.display = 'block';
+        return;
+      }
+
+      allTickets = data ?? [];
+      applyFilter();
+    }
+
+    (async () => {
+      const auth = await initPage('support');
+      if (!auth) return;
+      adminSession = auth.session;
+      await loadTickets();
+    })();
+  </script>
+</body>
+</html>

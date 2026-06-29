@@ -3,81 +3,108 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin — Connexion</title>
+  <title>Connexion — Admin CDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <script>
+    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+  </script>
+
   <div class="login-page">
     <div class="login-card">
-      <div class="login-brand">
-        <div class="login-brand-icon">🛡️</div>
-        <div class="login-brand-title">Coin des Étudiants</div>
+      <div class="login-logo">
+        <div class="login-logo-wrap" id="login-logo-wrap">
+          <img src="https://sovelwnthvqtgtvxfpsj.supabase.co/storage/v1/object/public/avatars/logo.png"
+               alt="CDE" style="width:100%;height:100%;object-fit:cover;display:block"
+               onerror="document.getElementById('login-logo-wrap').style.display='none';document.getElementById('login-logo-fb').style.display='flex'" />
+        </div>
+        <div class="login-logo-fallback" id="login-logo-fb">CDE</div>
+        <div class="login-brand">Coin des Étudiants</div>
         <div class="login-brand-sub">Panneau d'administration</div>
       </div>
 
-      <div class="login-error" id="error-box"></div>
+      <div class="error-box" id="err-box"></div>
+
+      <p class="login-form-title">Connexion administrateur</p>
 
       <div class="form-group">
         <label class="form-label" for="email">Adresse email</label>
-        <input class="form-input" type="email" id="email" placeholder="admin@coindesetudiants.fr" autocomplete="email" />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="password">Mot de passe</label>
-        <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+        <input class="form-input" type="email" id="email"
+               placeholder="admin@example.com" autocomplete="email" />
       </div>
 
-      <button class="btn-login" id="login-btn" onclick="handleLogin()">Se connecter</button>
+      <div class="form-group">
+        <label class="form-label" for="pwd">Mot de passe</label>
+        <div class="input-wrap">
+          <input class="form-input" type="password" id="pwd"
+                 placeholder="••••••••" autocomplete="current-password" />
+          <button class="input-eye" type="button" id="eye-btn" onclick="toggleEye()">👁</button>
+        </div>
+      </div>
+
+      <button class="btn-login" id="submit-btn" onclick="handleLogin()">
+        Se connecter
+      </button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="app.js"></script>
   <script>
-    // Already logged in as admin → redirect
-    sb.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) return;
-      const { data: p } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
-      if (p?.role === 'admin') window.location.href = 'dashboard.html';
-    });
+    let showPwd = false;
+    function toggleEye() {
+      showPwd = !showPwd;
+      document.getElementById('pwd').type = showPwd ? 'text' : 'password';
+      document.getElementById('eye-btn').textContent = showPwd ? '🙈' : '👁';
+    }
 
-    document.getElementById('password').addEventListener('keydown', e => {
+    document.getElementById('pwd').addEventListener('keydown', e => {
       if (e.key === 'Enter') handleLogin();
     });
 
-    async function handleLogin() {
-      const email    = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const btn      = document.getElementById('login-btn');
-      const errBox   = document.getElementById('error-box');
+    // Already logged in → redirect
+    (async () => {
+      const { data:{ session } } = await sb.auth.getSession();
+      if (!session) return;
+      const { data:p } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
+      if (p?.role === 'admin') window.location.href = 'dashboard.html';
+    })();
 
-      errBox.classList.remove('visible');
-      if (!email || !password) { showError('Veuillez remplir tous les champs.'); return; }
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const pwd   = document.getElementById('pwd').value;
+      const btn   = document.getElementById('submit-btn');
+      const err   = document.getElementById('err-box');
+
+      err.classList.remove('visible');
+      if (!email || !pwd) { showErr('Veuillez remplir tous les champs.'); return; }
 
       btn.disabled = true;
-      btn.textContent = 'Connexion…';
+      btn.innerHTML = '<span class="spin-sm"></span> Connexion…';
 
-      const { data, error } = await sb.auth.signInWithPassword({ email, password });
-
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pwd });
       if (error || !data.user) {
-        btn.disabled = false; btn.textContent = 'Se connecter';
-        showError('Email ou mot de passe incorrect.');
-        return;
+        btn.disabled = false; btn.innerHTML = 'Se connecter';
+        showErr('Email ou mot de passe incorrect.'); return;
       }
 
-      const { data: profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
-
+      const { data:profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
       if (!profile || profile.role !== 'admin') {
         await sb.auth.signOut();
-        btn.disabled = false; btn.textContent = 'Se connecter';
-        showError('Accès refusé. Ce compte n\'a pas les droits administrateur.');
-        return;
+        btn.disabled = false; btn.innerHTML = 'Se connecter';
+        showErr('Accès refusé — compte sans droits administrateur.'); return;
       }
 
       window.location.href = 'dashboard.html';
     }
 
-    function showError(msg) {
-      const b = document.getElementById('error-box');
+    function showErr(msg) {
+      const b = document.getElementById('err-box');
       b.textContent = msg;
       b.classList.add('visible');
     }

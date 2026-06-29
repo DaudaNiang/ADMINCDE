@@ -3,52 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Certificats — Admin</title>
+  <title>Documents — Admin CDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="layout">
-    <div id="sidebar-placeholder"></div>
+  <script>
+    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+  </script>
 
-    <div class="main">
-      <div class="topbar">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div class="topbar-title">Certificats à valider</div>
-          <span class="topbar-badge" id="pending-badge" style="display:none"></span>
+  <div class="app-layout">
+    <div id="sidebar-placeholder"></div>
+    <div class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="page-title">Validation des documents</div>
+          <div class="page-sub" id="pending-sub"></div>
+        </div>
+        <div class="topbar-right">
+          <div class="admin-chip" id="admin-chip"></div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('certs',this)">📄 Certificats étudiants</button>
+          <button class="tab" onclick="switchTab('ids',this)">🪪 Pièces d'identité</button>
+        </div>
+
+        <!-- Tab: certificats -->
+        <div class="tab-content active" id="tab-certs">
+          <div class="section-label">En attente de validation</div>
+          <div id="certs-pending"><div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div></div>
+          <div class="sep"></div>
+          <div class="section-label" style="margin-top:4px">Déjà traités (20 derniers)</div>
+          <div id="certs-done"></div>
+        </div>
+
+        <!-- Tab: pièces d'identité -->
+        <div class="tab-content" id="tab-ids">
+          <div class="section-label">En attente de validation</div>
+          <div id="ids-pending"><div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div></div>
+          <div class="sep"></div>
+          <div class="section-label" style="margin-top:4px">Déjà traités (20 derniers)</div>
+          <div id="ids-done"></div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Modal refus -->
+  <div class="modal-backdrop hidden" id="modal-refuse">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Rejeter le document</span>
+        <button class="modal-close" onclick="closeRefuse()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13px;color:var(--sub);margin-bottom:14px">Motif du refus (optionnel — transmis à l'utilisateur via ticket support)</p>
+        <div class="form-group">
+          <label class="form-label">Motif</label>
+          <textarea class="form-textarea" id="motif-input" placeholder="Document illisible, mauvaise pièce justificative…" rows="3"></textarea>
         </div>
       </div>
-
-      <div class="content">
-        <div id="pending-list"><div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div></div>
-
-        <div class="section-title" style="margin-top:32px">Déjà traités</div>
-        <div id="done-list"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal valider -->
-  <div class="modal-overlay hidden" id="modal-validate">
-    <div class="modal-card">
-      <div class="modal-icon">✅</div>
-      <div class="modal-title" id="modal-validate-title"></div>
-      <div class="modal-sub">L'utilisateur recevra un email de confirmation.</div>
-      <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModal('modal-validate')">Annuler</button>
-        <button class="btn-confirm" id="modal-validate-confirm">Confirmer</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal refuser -->
-  <div class="modal-overlay hidden" id="modal-refuse">
-    <div class="modal-card">
-      <div class="modal-icon">❌</div>
-      <div class="modal-title" id="modal-refuse-title"></div>
-      <textarea class="motif-textarea" id="motif-input" placeholder="Motif du refus (optionnel)"></textarea>
-      <div class="modal-btn-row">
-        <button class="btn-cancel" onclick="closeModal('modal-refuse')">Annuler</button>
-        <button class="btn-confirm btn-confirm-red" id="modal-refuse-confirm">Confirmer le refus</button>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeRefuse()">Annuler</button>
+        <button class="btn btn-red" id="refuse-confirm-btn">Confirmer le rejet</button>
       </div>
     </div>
   </div>
@@ -56,120 +79,149 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="app.js"></script>
   <script>
-    let pendingCerts = [];
-    let doneCerts = [];
+    let pendingRefuse = null; // { type, id, userId }
 
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
+    function switchTab(id, btn) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + id).classList.add('active');
     }
 
-    async function loadCerts() {
-      const { data: pending } = await sb.from('certificats')
-        .select('*, profiles:etudiant_id (nom, prenom, email)')
-        .eq('statut', 'en_attente')
-        .order('created_at', { ascending: true });
+    function closeRefuse() { document.getElementById('modal-refuse').classList.add('hidden'); pendingRefuse = null; }
 
-      const { data: done } = await sb.from('certificats')
-        .select('*, profiles:etudiant_id (nom, prenom, email)')
-        .in('statut', ['valide', 'refuse'])
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      pendingCerts = pending ?? [];
-      doneCerts = done ?? [];
-      renderPending();
-      renderDone();
-
-      const badge = document.getElementById('pending-badge');
-      if (pendingCerts.length > 0) {
-        badge.textContent = `${pendingCerts.length} en attente`;
-        badge.style.display = 'inline-block';
-      } else {
-        badge.style.display = 'none';
-      }
+    function docCard(doc, type, userName, userEmail) {
+      const bucketPath = type === 'cert' ? 'certificats' : 'pieces_identite';
+      const viewUrl = doc.storage_path
+        ? `${window.SUPABASE_URL}/storage/v1/object/public/${bucketPath}/${doc.storage_path}`
+        : null;
+      return `
+        <div class="doc-card">
+          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:42px;height:42px;font-size:14px">
+            ${initials(doc.profiles?.nom, doc.profiles?.prenom)}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:600;color:var(--text)">${userName}</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:2px">${userEmail}</div>
+            <div style="font-size:12px;color:var(--sub);margin-top:2px">Soumis le ${fmtDate(doc.created_at)}</div>
+            ${viewUrl ? `<a href="${viewUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:10px;gap:5px">👁 Voir le document</a>` : '<div style="font-size:12px;color:var(--sub);margin-top:8px">Aucun fichier attaché</div>'}
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
+            <button class="btn btn-green btn-sm" onclick="validate('${type}','${doc.id}','${doc[type==='cert'?'etudiant_id':'user_id']}')">✓ Valider</button>
+            <button class="btn btn-red btn-sm" onclick="openRefuse('${type}','${doc.id}','${doc[type==='cert'?'etudiant_id':'user_id']}')">✗ Rejeter</button>
+          </div>
+        </div>`;
     }
 
-    function certName(cert) {
-      return `${cert.profiles?.prenom ?? ''} ${cert.profiles?.nom ?? ''}`.trim();
+    function doneCard(doc, type) {
+      const isOk = doc.statut === 'valide';
+      const name = `${doc.profiles?.prenom??''} ${doc.profiles?.nom??''}`.trim() || '—';
+      return `
+        <div class="doc-card" style="opacity:0.7">
+          <div class="avatar" style="background:${isOk?'var(--green-light)':'var(--red-light)'};color:${isOk?'var(--green)':'var(--red)'};width:42px;height:42px;font-size:14px">
+            ${initials(doc.profiles?.nom, doc.profiles?.prenom)}
+          </div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:600">${name}</div>
+            <div style="font-size:12px;color:var(--sub)">${isOk?'Validé':'Refusé'} · ${fmtDate(doc.created_at)}</div>
+            ${doc.motif_refus ? `<div style="font-size:12px;color:var(--red);margin-top:3px">Motif : ${doc.motif_refus}</div>` : ''}
+          </div>
+          <span class="badge ${isOk?'badge-green':'badge-red'}">${isOk?'✓ Validé':'✗ Refusé'}</span>
+        </div>`;
     }
 
-    function renderPending() {
-      const el = document.getElementById('pending-list');
-      if (pendingCerts.length === 0) {
-        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">✅</div><div>Aucun certificat en attente</div></div>`;
+    function renderPending(containerId, docs, type) {
+      const el = document.getElementById(containerId);
+      if (!docs?.length) {
+        el.innerHTML = `<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">Aucun document en attente</div></div>`;
         return;
       }
-      el.innerHTML = pendingCerts.map(cert => `
-        <div class="cert-card" id="cert-${cert.id}">
-          <div class="cert-avatar">${initials(cert.profiles?.nom, cert.profiles?.prenom)}</div>
-          <div style="flex:1">
-            <div class="cert-nom">${certName(cert)}</div>
-            <div class="cert-email">${cert.profiles?.email ?? ''}</div>
-            <div class="cert-date">Soumis le ${fmtDate(cert.created_at)}</div>
-            ${cert.storage_path ? `<a href="https://sovelwnthvqtgtvxfpsj.supabase.co/storage/v1/object/public/certificats/${cert.storage_path}" target="_blank" class="btn-preview">👁 Voir le certificat</a>` : ''}
-            <div class="cert-actions">
-              <button class="btn-validate" onclick="openValidate('${cert.id}', '${certName(cert)}', '${cert.etudiant_id}')">✓ Valider</button>
-              <button class="btn-refuse" onclick="openRefuse('${cert.id}', '${certName(cert)}')">✗ Refuser</button>
-            </div>
-          </div>
-        </div>`).join('');
-    }
-
-    function renderDone() {
-      const el = document.getElementById('done-list');
-      if (doneCerts.length === 0) { el.innerHTML = ''; return; }
-      el.innerHTML = doneCerts.map(cert => {
-        const isValid = cert.statut === 'valide';
-        return `
-          <div class="done-card">
-            <div class="cert-avatar done">${initials(cert.profiles?.nom, cert.profiles?.prenom)}</div>
-            <div style="flex:1">
-              <div class="cert-nom">${certName(cert)}</div>
-              <div class="cert-date">${isValid ? 'Validé' : 'Refusé'} le ${fmtDate(cert.created_at)}</div>
-            </div>
-            <span class="validated-badge" style="${isValid ? '' : 'background:#FEE2E2;color:#DC2626'}">
-              ${isValid ? '✅ Validé' : '❌ Refusé'}
-            </span>
-          </div>`;
+      el.innerHTML = docs.map(d => {
+        const name = `${d.profiles?.prenom??''} ${d.profiles?.nom??''}`.trim() || '—';
+        const email = d.profiles?.email ?? '—';
+        return docCard(d, type, name, email);
       }).join('');
     }
 
-    function openValidate(certId, name, etudiantId) {
-      document.getElementById('modal-validate-title').textContent = `Valider le compte de ${name} ?`;
-      const btn = document.getElementById('modal-validate-confirm');
-      btn.onclick = async () => {
-        closeModal('modal-validate');
-        await sb.from('certificats').update({ statut: 'valide' }).eq('id', certId);
-        await sb.from('profiles').update({ verified: true, badge: 'Étudiant vérifié' }).eq('id', etudiantId);
-        pendingCerts = pendingCerts.filter(c => c.id !== certId);
-        renderPending();
-        toast('Compte validé ✓');
-        await loadCerts();
-      };
-      document.getElementById('modal-validate').classList.remove('hidden');
+    function renderDone(containerId, docs, type) {
+      const el = document.getElementById(containerId);
+      if (!docs?.length) { el.innerHTML = ''; return; }
+      el.innerHTML = docs.map(d => doneCard(d, type)).join('');
     }
 
-    function openRefuse(certId, name) {
-      document.getElementById('modal-refuse-title').textContent = `Refuser le certificat de ${name} ?`;
+    async function validate(type, docId, userId) {
+      showSpinner();
+      try {
+        if (type === 'cert') {
+          await sb.from('certificats').update({ statut: 'valide' }).eq('id', docId);
+          await sb.from('profiles').update({ verified: true, badge: 'Étudiant vérifié' }).eq('id', userId);
+        } else {
+          await sb.from('pieces_identite').update({ statut: 'valide' }).eq('id', docId);
+          await sb.from('profiles').update({ identity_verified: true }).eq('id', userId);
+        }
+        toast('Document validé avec succès ✓');
+        await loadAll();
+      } catch(e) { toast('Erreur : ' + e.message, 'error'); }
+      hideSpinner();
+    }
+
+    function openRefuse(type, docId, userId) {
+      pendingRefuse = { type, docId, userId };
       document.getElementById('motif-input').value = '';
-      const btn = document.getElementById('modal-refuse-confirm');
-      btn.onclick = async () => {
-        const motif = document.getElementById('motif-input').value;
-        closeModal('modal-refuse');
-        await sb.from('certificats').update({ statut: 'refuse', motif_refus: motif }).eq('id', certId);
-        pendingCerts = pendingCerts.filter(c => c.id !== certId);
-        renderPending();
-        toast('Certificat refusé');
-        await loadCerts();
-      };
       document.getElementById('modal-refuse').classList.remove('hidden');
+      document.getElementById('refuse-confirm-btn').onclick = async () => {
+        const motif = document.getElementById('motif-input').value.trim();
+        closeRefuse();
+        showSpinner();
+        try {
+          const table = pendingRefuse.type === 'cert' ? 'certificats' : 'pieces_identite';
+          await sb.from(table).update({ statut: 'refuse', motif_refus: motif || null }).eq('id', pendingRefuse.docId);
+          // Create support ticket with reason
+          if (motif) {
+            await sb.from('support_tickets').insert({
+              user_id: pendingRefuse.userId,
+              sujet: 'Document rejeté',
+              message: motif,
+              statut: 'ouvert',
+            }).catch(() => {});
+          }
+          toast('Document rejeté');
+          await loadAll();
+        } catch(e) { toast('Erreur : ' + e.message, 'error'); }
+        hideSpinner();
+      };
+    }
+
+    async function loadAll() {
+      const [
+        { data: certsPending }, { data: certsDone },
+        { data: idsPending, error: idsErr }, { data: idsDone },
+      ] = await Promise.all([
+        sb.from('certificats').select('*,profiles:etudiant_id(nom,prenom,email)').eq('statut','en_attente').order('created_at'),
+        sb.from('certificats').select('*,profiles:etudiant_id(nom,prenom)').in('statut',['valide','refuse']).order('created_at',{ascending:false}).limit(20),
+        sb.from('pieces_identite').select('*,profiles:user_id(nom,prenom,email)').eq('statut','en_attente').order('created_at').catch(()=>({data:[],error:true})),
+        sb.from('pieces_identite').select('*,profiles:user_id(nom,prenom)').in('statut',['valide','refuse']).order('created_at',{ascending:false}).limit(20).catch(()=>({data:[]})),
+      ]);
+
+      const total = (certsPending?.length??0) + (idsPending?.length??0);
+      document.getElementById('pending-sub').textContent = total > 0 ? `${total} document${total>1?'s':''} en attente` : 'Aucun document en attente';
+
+      renderPending('certs-pending', certsPending, 'cert');
+      renderDone('certs-done', certsDone, 'cert');
+
+      if (idsErr) {
+        document.getElementById('ids-pending').innerHTML = '<div class="empty-state"><div class="empty-icon">🪪</div><div class="empty-title">Table non configurée</div></div>';
+        document.getElementById('ids-done').innerHTML = '';
+      } else {
+        renderPending('ids-pending', idsPending, 'id');
+        renderDone('ids-done', idsDone, 'id');
+      }
     }
 
     (async () => {
-      const auth = await requireAdmin();
+      const auth = await initPage('certificats');
       if (!auth) return;
-      document.getElementById('sidebar-placeholder').innerHTML = sidebar('certificats');
-      await loadCerts();
+      await loadAll();
     })();
   </script>
 </body>

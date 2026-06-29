@@ -3,49 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Utilisateurs — Admin</title>
+  <title>Utilisateurs — Admin CDE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="layout">
+  <script>
+    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+  </script>
+
+  <div class="app-layout">
     <div id="sidebar-placeholder"></div>
+    <div class="main-content">
+      <header class="topbar">
+        <div>
+          <div class="page-title">Utilisateurs</div>
+          <div class="page-sub" id="user-count-sub"></div>
+        </div>
+        <div class="topbar-right">
+          <div class="admin-chip" id="admin-chip"></div>
+        </div>
+      </header>
 
-    <div class="main">
-      <div class="topbar">
-        <div class="topbar-title">Utilisateurs</div>
-      </div>
-
-      <div class="content">
+      <main class="content">
         <div class="toolbar">
-          <input class="search-input" type="text" id="search-input" placeholder="Rechercher par nom ou email…" oninput="filterUsers()" />
-          <div class="filter-pills" id="role-filters">
-            <button class="filter-pill active" data-role="" onclick="setRole(this, '')">Tous</button>
-            <button class="filter-pill" data-role="etudiant" onclick="setRole(this, 'etudiant')">🎓 Étudiants</button>
-            <button class="filter-pill" data-role="bailleur" onclick="setRole(this, 'bailleur')">🏠 Bailleurs</button>
-            <button class="filter-pill" data-role="particulier" onclick="setRole(this, 'particulier')">🧑 Particuliers</button>
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="search-input" id="search" type="text" placeholder="Rechercher par nom…" oninput="applyFilters()" />
+          </div>
+          <div class="filter-pills">
+            <button class="filter-pill active" onclick="setRole(this,'')">Tous</button>
+            <button class="filter-pill" onclick="setRole(this,'etudiant')">🎓 Étudiants</button>
+            <button class="filter-pill" onclick="setRole(this,'bailleur')">🏠 Bailleurs</button>
+            <button class="filter-pill" onclick="setRole(this,'particulier')">🧑 Particuliers</button>
           </div>
         </div>
 
-        <div id="count-label" class="count-label"></div>
-        <div id="users-list"><div style="padding:20px;text-align:center;color:var(--sub)">Chargement…</div></div>
-      </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Rôle</th>
+                <th>Vérifié (SMS)</th>
+                <th>Identité</th>
+                <th>Badge</th>
+                <th>Inscrit le</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody">
+              <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--sub)">Chargement…</td></tr>
+            </tbody>
+          </table>
+          <div id="users-pagination"></div>
+        </div>
+      </main>
     </div>
   </div>
 
-  <!-- Modal voir profil -->
-  <div class="modal-overlay hidden" id="modal-user">
-    <div class="modal-card modal-wide">
-      <div class="modal-header-row">
-        <div class="modal-user-avatar" id="modal-avatar"></div>
-        <div>
-          <div class="modal-title" id="modal-name"></div>
-          <div class="modal-sub" id="modal-email"></div>
+  <!-- Modal détail -->
+  <div class="modal-backdrop hidden" id="modal-user">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="avatar" id="modal-avatar" style="width:44px;height:44px;font-size:16px"></div>
+          <div>
+            <div class="modal-title" id="modal-name"></div>
+            <div style="font-size:12px;color:var(--sub);margin-top:2px" id="modal-role-badge"></div>
+          </div>
         </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
       </div>
-      <div class="modal-fields" id="modal-fields"></div>
-      <div class="modal-btn-row" style="margin-top:24px">
-        <button class="btn-cancel" onclick="closeModal('modal-user')">Fermer</button>
-        <button class="btn-confirm btn-confirm-red" id="btn-suspend" style="display:none">Suspendre le compte</button>
+      <div class="modal-body">
+        <div class="detail-grid" id="modal-fields"></div>
+        <div class="sep"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-green btn-sm" id="btn-verify-id" onclick="verifyIdentity()">✓ Valider identité</button>
+          <button class="btn btn-red btn-sm" id="btn-suspend" onclick="suspendUser()">⛔ Suspendre (30j)</button>
+          <button class="btn btn-primary btn-sm" onclick="window.location.href='support.html'">💬 Support</button>
+        </div>
       </div>
     </div>
   </div>
@@ -53,105 +93,128 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="app.js"></script>
   <script>
-    let allUsers = [];
-    let activeRole = '';
+    let allUsers = [], filtered = [], currentPage = 1, activeRole = '', selectedUser = null;
 
-    const ROLE_ICON  = { etudiant: '🎓', bailleur: '🏠', particulier: '🧑' };
-    const ROLE_LABEL = { etudiant: 'Étudiant', bailleur: 'Bailleur', particulier: 'Particulier' };
-    const ROLE_COLOR = { etudiant: '#4CAF50', bailleur: '#1E5AA8', particulier: '#7C3AED' };
-    const BADGE_COLOR = { 'Étudiant vérifié': '#4CAF50', 'Entreprise vérifiée': '#1E5AA8' };
-
-    function closeModal(id) {
-      document.getElementById(id).classList.add('hidden');
-    }
+    function gotoPage(n) { currentPage = n; renderTable(); }
 
     function setRole(btn, role) {
       activeRole = role;
       document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      filterUsers();
+      applyFilters();
     }
 
-    function filterUsers() {
-      const q = document.getElementById('search-input').value.toLowerCase();
-      const filtered = allUsers.filter(u => {
-        const matchRole = activeRole === '' || u.role === activeRole;
-        const matchQ = !q
-          || (u.prenom + ' ' + u.nom).toLowerCase().includes(q)
-          || (u.email ?? '').toLowerCase().includes(q);
-        return matchRole && matchQ;
+    function applyFilters() {
+      const q = document.getElementById('search').value.toLowerCase();
+      filtered = allUsers.filter(u => {
+        const matchRole = !activeRole || u.role === activeRole;
+        const name = `${u.prenom??''} ${u.nom??''}`.toLowerCase();
+        return matchRole && (!q || name.includes(q));
       });
-      renderUsers(filtered);
+      currentPage = 1;
+      renderTable();
     }
 
-    function renderUsers(list) {
-      const el = document.getElementById('users-list');
-      document.getElementById('count-label').textContent = `${list.length} utilisateur${list.length !== 1 ? 's' : ''}`;
+    function renderTable() {
+      const page = paginate(filtered, currentPage);
+      const tbody = document.getElementById('users-tbody');
 
-      if (list.length === 0) {
-        el.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👥</div><div>Aucun résultat</div></div>`;
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun résultat</div></div></td></tr>`;
+        document.getElementById('users-pagination').innerHTML = '';
         return;
       }
 
-      el.innerHTML = list.map(u => `
-        <div class="user-card" onclick="openUser('${u.id}')">
-          <div class="user-avatar" style="background:${(ROLE_COLOR[u.role] ?? '#647488')}22;color:${ROLE_COLOR[u.role] ?? '#647488'}">
-            ${initials(u.nom, u.prenom)}
-          </div>
-          <div style="flex:1">
-            <div class="user-name">${u.prenom ?? ''} ${u.nom ?? ''}</div>
-            <div class="user-meta">${ROLE_ICON[u.role] ?? '👤'} ${ROLE_LABEL[u.role] ?? u.role} · ${fmtDate(u.created_at)}</div>
-          </div>
-          ${u.badge ? `<span class="user-badge-tag" style="background:${(BADGE_COLOR[u.badge] ?? '#647488')}22;color:${BADGE_COLOR[u.badge] ?? '#647488'}">${u.badge}</span>` : ''}
-          ${u.verified ? `<span class="verified-dot" title="Vérifié">✓</span>` : ''}
-          <span class="chevron">›</span>
-        </div>`).join('');
+      tbody.innerHTML = page.map(u => {
+        const c = ROLE_COLOR[u.role]??'#647488', bg = ROLE_BG[u.role]??'#F3F4F6';
+        return `<tr onclick="openUser('${u.id}')">
+          <td><div class="td-user">
+            <div class="avatar" style="background:${bg};color:${c}">${initials(u.nom,u.prenom)}</div>
+            <div><div class="td-name">${u.prenom??''} ${u.nom??''}</div></div>
+          </div></td>
+          <td>${roleBadge(u.role)}</td>
+          <td>${u.verified ? '<span class="badge badge-green">✓ Vérifié</span>' : '<span class="badge badge-gray">Non</span>'}</td>
+          <td>${u.identity_verified ? '<span class="badge badge-green">✓</span>' : '<span class="badge badge-gray">—</span>'}</td>
+          <td>${u.badge ? `<span class="badge badge-violet">${u.badge}</span>` : '—'}</td>
+          <td>${fmtDate(u.created_at)}</td>
+          <td><button class="btn btn-ghost btn-sm">Voir</button></td>
+        </tr>`;
+      }).join('');
+
+      renderPagination('users-pagination', filtered.length, currentPage);
+      document.getElementById('user-count-sub').textContent = `${filtered.length} utilisateur${filtered.length!==1?'s':''}`;
     }
 
-    function openUser(userId) {
-      const u = allUsers.find(x => x.id === userId);
-      if (!u) return;
-      document.getElementById('modal-avatar').textContent = initials(u.nom, u.prenom);
-      document.getElementById('modal-avatar').style.cssText = `background:${(ROLE_COLOR[u.role] ?? '#647488')}22;color:${ROLE_COLOR[u.role] ?? '#647488'}`;
-      document.getElementById('modal-name').textContent = `${u.prenom ?? ''} ${u.nom ?? ''}`;
-      document.getElementById('modal-email').textContent = u.email ?? '—';
+    function openUser(id) {
+      selectedUser = allUsers.find(u => u.id === id);
+      if (!selectedUser) return;
+      const u = selectedUser;
+      const c = ROLE_COLOR[u.role]??'#647488', bg = ROLE_BG[u.role]??'#F3F4F6';
+      const av = document.getElementById('modal-avatar');
+      av.textContent = initials(u.nom, u.prenom);
+      av.style.background = bg; av.style.color = c;
+      document.getElementById('modal-name').textContent = `${u.prenom??''} ${u.nom??''}`.trim() || '—';
+      document.getElementById('modal-role-badge').innerHTML = roleBadge(u.role);
 
       const fields = [
-        ['Rôle', `${ROLE_ICON[u.role] ?? '👤'} ${ROLE_LABEL[u.role] ?? u.role}`],
-        ['Téléphone', u.telephone ?? '—'],
-        ['Vérifié', u.verified ? '✅ Oui' : '❌ Non'],
-        ['Badge', u.badge || '—'],
+        ['Rôle', ROLE_LABEL[u.role]??u.role],
+        ['Téléphone', u.telephone??'—'],
+        ['SMS vérifié', u.verified?'✅ Oui':'❌ Non'],
+        ['Identité vérifiée', u.identity_verified?'✅ Oui':'❌ Non'],
+        ['Badge', u.badge||'—'],
         ['Inscrit le', fmtDate(u.created_at)],
+        ...(u.role==='particulier' ? [
+          ['Type', u.sous_type??'—'],
+          ['SIRET', u.siret??'—'],
+          ['Entreprise', u.entreprise??'—'],
+        ] : []),
+        ...(u.role==='etudiant' ? [['Parcours', u.parcours??'—']] : []),
+        ...(u.banned_until ? [['Suspendu jusqu\'au', fmtDate(u.banned_until)]] : []),
       ];
-      if (u.role === 'particulier') {
-        fields.push(['Type', u.sous_type ?? '—']);
-        if (u.siret) fields.push(['SIRET', u.siret]);
-        if (u.entreprise) fields.push(['Entreprise', u.entreprise]);
-      }
-      if (u.role === 'etudiant') {
-        fields.push(['Parcours', u.parcours ?? '—']);
-      }
 
-      document.getElementById('modal-fields').innerHTML = fields.map(([k, v]) =>
-        `<div class="modal-field-row"><span class="modal-field-key">${k}</span><span class="modal-field-val">${v}</span></div>`
-      ).join('');
+      document.getElementById('modal-fields').innerHTML = fields.map(([k,v]) => `
+        <div><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`).join('');
 
+      document.getElementById('btn-verify-id').style.display = u.identity_verified ? 'none' : 'inline-flex';
       document.getElementById('modal-user').classList.remove('hidden');
     }
 
+    function closeModal() { document.getElementById('modal-user').classList.add('hidden'); selectedUser = null; }
+
+    async function verifyIdentity() {
+      if (!selectedUser) return;
+      showConfirm(`Valider l'identité de ${selectedUser.prenom} ${selectedUser.nom} ?`, async () => {
+        showSpinner();
+        await sb.from('profiles').update({ identity_verified: true }).eq('id', selectedUser.id);
+        hideSpinner();
+        toast('Identité validée ✓');
+        closeModal();
+        await loadUsers();
+      }, { label: 'Valider' });
+    }
+
+    async function suspendUser() {
+      if (!selectedUser) return;
+      showConfirm(`Suspendre le compte de ${selectedUser.prenom} ${selectedUser.nom} pendant 30 jours ?`, async () => {
+        showSpinner();
+        const until = new Date(); until.setDate(until.getDate() + 30);
+        await sb.from('profiles').update({ banned_until: until.toISOString() }).eq('id', selectedUser.id);
+        hideSpinner();
+        toast('Compte suspendu pour 30 jours');
+        closeModal();
+        await loadUsers();
+      }, { danger: true, label: 'Suspendre', title: 'Suspendre le compte' });
+    }
+
     async function loadUsers() {
-      const { data } = await sb.from('profiles')
-        .select('*')
-        .neq('role', 'admin')
-        .order('created_at', { ascending: false });
+      const { data } = await sb.from('profiles').select('*').neq('role','admin').order('created_at',{ascending:false});
       allUsers = data ?? [];
-      filterUsers();
+      applyFilters();
     }
 
     (async () => {
-      const auth = await requireAdmin();
+      const auth = await initPage('utilisateurs');
       if (!auth) return;
-      document.getElementById('sidebar-placeholder').innerHTML = sidebar('utilisateurs');
       await loadUsers();
     })();
   </script>
