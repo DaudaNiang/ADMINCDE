@@ -68,20 +68,16 @@
     });
 
     // Already logged in → redirect
-    (async () => {
-      const { data:{ session } } = await sb.auth.getSession();
-      if (!session) return;
-      const { data:p } = await sb.from('profiles').select('role').eq('id', session.user.id).single();
-      if (p?.role === 'admin') window.location.href = 'dashboard.html';
-    })();
+    if (localStorage.getItem('cde_admin_session')) {
+      window.location.href = 'dashboard.html';
+    }
 
     async function handleLogin() {
       const email = document.getElementById('email').value.trim();
       const pwd   = document.getElementById('pwd').value;
       const btn   = document.getElementById('submit-btn');
-      const err   = document.getElementById('err-box');
 
-      err.classList.remove('visible');
+      document.getElementById('err-box').classList.remove('visible');
       if (!email || !pwd) { showErr('Veuillez remplir tous les champs.'); return; }
 
       btn.disabled = true;
@@ -93,12 +89,25 @@
         showErr('Email ou mot de passe incorrect.'); return;
       }
 
-      const { data:profile } = await sb.from('profiles').select('role').eq('id', data.user.id).single();
+      const { data: profile } = await sb
+        .from('profiles')
+        .select('role, nom, prenom')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
       if (!profile || profile.role !== 'admin') {
         await sb.auth.signOut();
         btn.disabled = false; btn.innerHTML = 'Se connecter';
-        showErr('Accès refusé — compte sans droits administrateur.'); return;
+        showErr('Accès refusé. Compte admin requis.'); return;
       }
+
+      localStorage.setItem('cde_admin_session', JSON.stringify({
+        id: data.user.id,
+        nom: profile.nom,
+        prenom: profile.prenom,
+        email: data.user.email,
+        access_token: data.session.access_token,
+      }));
 
       window.location.href = 'dashboard.html';
     }

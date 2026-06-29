@@ -120,28 +120,30 @@ function renderPagination(containerId, total, page) {
 
 // ── Auth ───────────────────────────────────────────────────
 async function requireAdmin() {
-  const { data:{ session } } = await sb.auth.getSession();
-  if (!session) { window.location.href='index.html'; return null; }
-  const { data:profile } = await sb.from('profiles').select('role,nom,prenom').eq('id',session.user.id).single();
-  if (!profile || profile.role !== 'admin') {
-    await sb.auth.signOut();
-    window.location.href='index.html';
+  const session = JSON.parse(localStorage.getItem('cde_admin_session') || 'null');
+  if (!session) {
+    window.location.href = 'index.html';
     return null;
   }
-  return { session, profile };
+  return session;
 }
 
 function logout() {
   showConfirm('Voulez-vous vraiment vous déconnecter ?', async () => {
-    await sb.auth.signOut(); window.location.href='index.html';
+    localStorage.removeItem('cde_admin_session');
+    await sb.auth.signOut();
+    window.location.href = 'index.html';
   }, { title:'Déconnexion', label:'Se déconnecter' });
 }
 
-function injectAdminChip(profile) {
+function injectAdminChip(session) {
   const el = document.getElementById('admin-chip');
   if (!el) return;
-  const name = `${profile.prenom??''} ${profile.nom??''}`.trim() || 'Admin';
-  el.innerHTML = `<div class="admin-avatar">${initials(profile.nom,profile.prenom)}</div><span class="admin-name">${name}</span>`;
+  // session is the localStorage object: { id, nom, prenom, email, access_token }
+  const nom    = session.nom    ?? session.profile?.nom    ?? '';
+  const prenom = session.prenom ?? session.profile?.prenom ?? '';
+  const name   = `${prenom} ${nom}`.trim() || session.email || 'Admin';
+  el.innerHTML = `<div class="admin-avatar">${initials(nom, prenom)}</div><span class="admin-name">${name}</span>`;
 }
 
 // ── Sidebar ────────────────────────────────────────────────
