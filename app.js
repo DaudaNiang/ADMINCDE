@@ -11,6 +11,11 @@ function toast(msg, type = 'success') {
   _tc.appendChild(el);
   setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(20px)'; setTimeout(()=>el.remove(),300); }, 3000);
 }
+function showToast(msg, type = 'success') { toast(msg, type); }
+
+// ── Modal helpers ──────────────────────────────────────────
+function openModal(id)  { document.getElementById(id)?.classList.remove('hidden'); }
+function closeModal(id) { document.getElementById(id)?.classList.add('hidden'); }
 
 // ── Spinner ────────────────────────────────────────────────
 let _spin = null;
@@ -56,6 +61,10 @@ function fmtDateTime(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleString('fr-FR', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
 }
+function formatDate(dateString) {
+  if (!dateString) return '—';
+  return new Date(dateString).toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+}
 function initials(nom, prenom) {
   return ((prenom?.[0]??'') + (nom?.[0]??'')).toUpperCase() || '?';
 }
@@ -69,7 +78,7 @@ const CAT_ICON   = { logement:'🏠', emploi:'💼', services:'🤝', dons:'🎁
 
 function roleBadge(role) {
   const c=ROLE_COLOR[role]??'#647488', bg=ROLE_BG[role]??'#F3F4F6';
-  return `<span class="badge" style="background:${bg};color:${c}">${ROLE_ICON[role]??'👤'} ${ROLE_LABEL[role]??role}</span>`;
+  return `<span class="badge" style="background:${bg};color:${c};border-radius:20px">${ROLE_ICON[role]??'👤'} ${ROLE_LABEL[role]??role}</span>`;
 }
 
 function statusBadge(status) {
@@ -134,7 +143,6 @@ function logout() {
 function injectAdminChip(session) {
   const el = document.getElementById('admin-chip');
   if (!el) return;
-  // session is the localStorage object: { id, nom, prenom, email, access_token }
   const nom    = session.nom    ?? session.profile?.nom    ?? '';
   const prenom = session.prenom ?? session.profile?.prenom ?? '';
   const name   = `${prenom} ${nom}`.trim() || session.email || 'Admin';

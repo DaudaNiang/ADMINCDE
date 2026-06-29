@@ -11,7 +11,7 @@
 </head>
 <body>
   <script>
-    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
     window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
   </script>
@@ -63,7 +63,7 @@
         <span class="modal-title">Aperçu du document</span>
         <div style="display:flex;align-items:center;gap:8px">
           <a class="btn btn-ghost btn-sm" id="modal-img-link" href="#" target="_blank" download>⬇ Télécharger</a>
-          <button class="modal-close" onclick="document.getElementById('modal-image').classList.add('hidden')">✕</button>
+          <button class="modal-close" onclick="closeModal('modal-image')">✕</button>
         </div>
       </div>
       <div class="modal-body" style="text-align:center;padding:16px;background:var(--bg);border-radius:0 0 16px 16px">
@@ -74,23 +74,57 @@
     </div>
   </div>
 
-  <!-- Modal refus -->
+  <!-- Modal validation confirmation -->
+  <div class="modal-backdrop hidden" id="modal-valider">
+    <div class="modal">
+      <div class="modal-header">
+        <span class="modal-title">Valider le document</span>
+        <button class="modal-close" onclick="closeModal('modal-valider')">✕</button>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:24px 22px">
+        <div class="confirm-icon" style="background:var(--green-light)">✅</div>
+        <p style="font-size:14px;color:var(--text);line-height:1.6;margin-top:12px" id="valider-msg">
+          Confirmer la validation de ce document ?
+        </p>
+        <p style="font-size:12px;color:var(--sub);margin-top:6px">Le statut et le badge de l'utilisateur seront mis à jour.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal('modal-valider')">Annuler</button>
+        <button class="btn btn-green" id="valider-confirm-btn">✓ Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal refus avec motifs prédéfinis -->
   <div class="modal-backdrop hidden" id="modal-refuse">
     <div class="modal">
       <div class="modal-header">
         <span class="modal-title">Rejeter le document</span>
-        <button class="modal-close" onclick="closeRefuse()">✕</button>
+        <button class="modal-close" onclick="closeModal('modal-refuse')">✕</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:13px;color:var(--sub);margin-bottom:14px">Motif du refus (optionnel — transmis à l'utilisateur via ticket support)</p>
-        <div class="form-group">
-          <label class="form-label">Motif</label>
-          <textarea class="form-textarea" id="motif-input" placeholder="Document illisible, mauvaise pièce justificative…" rows="3"></textarea>
+        <p style="font-size:13px;color:var(--sub);margin-bottom:14px">Sélectionnez le motif du refus :</p>
+        <div class="motif-list">
+          <label class="motif-item">
+            <input type="radio" name="motif-radio" value="Document illisible" onchange="onMotifChange(this)"> Document illisible
+          </label>
+          <label class="motif-item">
+            <input type="radio" name="motif-radio" value="Document expiré" onchange="onMotifChange(this)"> Document expiré
+          </label>
+          <label class="motif-item">
+            <input type="radio" name="motif-radio" value="Non conforme" onchange="onMotifChange(this)"> Non conforme (mauvais document)
+          </label>
+          <label class="motif-item">
+            <input type="radio" name="motif-radio" value="Autre" onchange="onMotifChange(this)"> Autre (préciser)
+          </label>
+        </div>
+        <div class="form-group" id="motif-extra-wrap" style="display:none">
+          <textarea class="form-textarea" id="motif-input" placeholder="Précisez le motif…" rows="2"></textarea>
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-ghost" onclick="closeRefuse()">Annuler</button>
-        <button class="btn btn-red" id="refuse-confirm-btn">Confirmer le rejet</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-refuse')">Annuler</button>
+        <button class="btn btn-red" id="refuse-confirm-btn">✗ Confirmer le rejet</button>
       </div>
     </div>
   </div>
@@ -98,7 +132,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="app.js"></script>
   <script>
-    let pendingRefuse = null; // { type, id, userId }
+    let pendingRefuse = null, pendingValide = null;
 
     function switchTab(id, btn) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -107,17 +141,22 @@
       document.getElementById('tab-' + id).classList.add('active');
     }
 
-    function closeRefuse() { document.getElementById('modal-refuse').classList.add('hidden'); pendingRefuse = null; }
+    function onMotifChange(radio) {
+      document.getElementById('motif-extra-wrap').style.display =
+        radio.value === 'Autre' ? 'block' : 'none';
+      document.querySelectorAll('.motif-item').forEach(el => {
+        el.classList.toggle('selected', el.querySelector('input')?.checked);
+      });
+    }
 
     function docCard(doc, type, userName, userEmail) {
       const bucket  = type === 'cert' ? 'certificats' : 'pieces-identite';
       const userId  = doc[type === 'cert' ? 'etudiant_id' : 'user_id'];
       const hasFile = !!doc.storage_path;
-      // escape path for data-attribute (avoids quote-injection)
       const safePath = hasFile ? doc.storage_path.replace(/"/g, '&quot;') : '';
       return `
         <div class="doc-card">
-          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:42px;height:42px;font-size:14px">
+          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:44px;height:44px;font-size:15px;flex-shrink:0">
             ${initials(doc.profiles?.nom, doc.profiles?.prenom)}
           </div>
           <div style="flex:1">
@@ -130,11 +169,11 @@
                    onclick="viewDoc(this.dataset.bucket, this.dataset.path, this)">
                    👁 Voir le document
                  </button>`
-              : '<div style="font-size:12px;color:var(--sub);margin-top:8px">Aucun fichier attaché</div>'
+              : '<div style="font-size:12px;color:var(--sub);margin-top:8px;padding:6px 0">Aucun fichier attaché</div>'
             }
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-            <button class="btn btn-green btn-sm" onclick="validate('${type}','${doc.id}','${userId}')">✓ Valider</button>
+            <button class="btn btn-green btn-sm" onclick="openValide('${type}','${doc.id}','${userId}','${userName}')">✓ Valider</button>
             <button class="btn btn-red btn-sm" onclick="openRefuse('${type}','${doc.id}','${userId}')">✗ Rejeter</button>
           </div>
         </div>`;
@@ -152,24 +191,77 @@
       const ext = storagePath.split('.').pop().toLowerCase();
       const isImage = ['jpg','jpeg','png','webp','gif','heic','heif','bmp'].includes(ext);
       if (isImage) {
-        const imgEl  = document.getElementById('modal-img-el');
-        const linkEl = document.getElementById('modal-img-link');
-        imgEl.src = '';          // reset before load to show spinner
-        imgEl.src = data.signedUrl;
-        linkEl.href = data.signedUrl;
-        document.getElementById('modal-image').classList.remove('hidden');
+        document.getElementById('modal-img-el').src = '';
+        document.getElementById('modal-img-el').src = data.signedUrl;
+        document.getElementById('modal-img-link').href = data.signedUrl;
+        openModal('modal-image');
       } else {
-        // PDF or other: open in new tab
         window.open(data.signedUrl, '_blank');
       }
+    }
+
+    function openValide(type, docId, userId, userName) {
+      pendingValide = { type, docId, userId };
+      document.getElementById('valider-msg').textContent =
+        `Valider le document de ${userName} ?`;
+      document.getElementById('valider-confirm-btn').onclick = async () => {
+        closeModal('modal-valider');
+        await doValidate(pendingValide.type, pendingValide.docId, pendingValide.userId);
+      };
+      openModal('modal-valider');
+    }
+
+    async function doValidate(type, docId, userId) {
+      showSpinner();
+      try {
+        if (type === 'cert') {
+          await sb.from('certificats').update({ statut: 'valide' }).eq('id', docId);
+          await sb.from('profiles').update({ verified: true, badge: 'Étudiant vérifié' }).eq('id', userId);
+        } else {
+          await sb.from('pieces_identite').update({ statut: 'valide' }).eq('id', docId);
+          await sb.from('profiles').update({ identity_verified: true }).eq('id', userId);
+        }
+        toast('Document validé ✓');
+        await loadAll();
+      } catch(e) { toast('Erreur : ' + e.message, 'error'); }
+      hideSpinner();
+    }
+
+    function openRefuse(type, docId, userId) {
+      pendingRefuse = { type, docId, userId };
+      document.querySelectorAll('input[name="motif-radio"]').forEach(r => r.checked = false);
+      document.querySelectorAll('.motif-item').forEach(el => el.classList.remove('selected'));
+      document.getElementById('motif-input').value = '';
+      document.getElementById('motif-extra-wrap').style.display = 'none';
+      document.getElementById('refuse-confirm-btn').onclick = async () => {
+        const selected = document.querySelector('input[name="motif-radio"]:checked')?.value;
+        if (!selected) { toast('Sélectionnez un motif', 'error'); return; }
+        const extra  = document.getElementById('motif-input').value.trim();
+        const motif  = selected === 'Autre' ? (extra || 'Autre') : (extra ? `${selected} — ${extra}` : selected);
+        closeModal('modal-refuse');
+        showSpinner();
+        try {
+          const table = pendingRefuse.type === 'cert' ? 'certificats' : 'pieces_identite';
+          await sb.from(table).update({ statut: 'refuse', motif_refus: motif }).eq('id', pendingRefuse.docId);
+          if (motif) {
+            await sb.from('support_tickets').insert({
+              user_id: pendingRefuse.userId, sujet: 'Document rejeté', message: motif, statut: 'ouvert',
+            }).catch(() => {});
+          }
+          toast('Document rejeté');
+          await loadAll();
+        } catch(e) { toast('Erreur : ' + e.message, 'error'); }
+        hideSpinner();
+      };
+      openModal('modal-refuse');
     }
 
     function doneCard(doc, type) {
       const isOk = doc.statut === 'valide';
       const name = `${doc.profiles?.prenom??''} ${doc.profiles?.nom??''}`.trim() || '—';
       return `
-        <div class="doc-card" style="opacity:0.7">
-          <div class="avatar" style="background:${isOk?'var(--green-light)':'var(--red-light)'};color:${isOk?'var(--green)':'var(--red)'};width:42px;height:42px;font-size:14px">
+        <div class="doc-card" style="opacity:0.72">
+          <div class="avatar" style="background:${isOk?'var(--green-light)':'var(--red-light)'};color:${isOk?'var(--green)':'var(--red)'};width:44px;height:44px;font-size:15px;flex-shrink:0">
             ${initials(doc.profiles?.nom, doc.profiles?.prenom)}
           </div>
           <div style="flex:1">
@@ -188,59 +280,16 @@
         return;
       }
       el.innerHTML = docs.map(d => {
-        const name = `${d.profiles?.prenom??''} ${d.profiles?.nom??''}`.trim() || '—';
+        const name  = `${d.profiles?.prenom??''} ${d.profiles?.nom??''}`.trim() || '—';
         const email = d.profiles?.email ?? '—';
         return docCard(d, type, name, email);
       }).join('');
     }
 
-    function renderDone(containerId, docs, type) {
+    function renderDone(containerId, docs) {
       const el = document.getElementById(containerId);
       if (!docs?.length) { el.innerHTML = ''; return; }
-      el.innerHTML = docs.map(d => doneCard(d, type)).join('');
-    }
-
-    async function validate(type, docId, userId) {
-      showSpinner();
-      try {
-        if (type === 'cert') {
-          await sb.from('certificats').update({ statut: 'valide' }).eq('id', docId);
-          await sb.from('profiles').update({ verified: true, badge: 'Étudiant vérifié' }).eq('id', userId);
-        } else {
-          await sb.from('pieces_identite').update({ statut: 'valide' }).eq('id', docId);
-          await sb.from('profiles').update({ identity_verified: true }).eq('id', userId);
-        }
-        toast('Document validé avec succès ✓');
-        await loadAll();
-      } catch(e) { toast('Erreur : ' + e.message, 'error'); }
-      hideSpinner();
-    }
-
-    function openRefuse(type, docId, userId) {
-      pendingRefuse = { type, docId, userId };
-      document.getElementById('motif-input').value = '';
-      document.getElementById('modal-refuse').classList.remove('hidden');
-      document.getElementById('refuse-confirm-btn').onclick = async () => {
-        const motif = document.getElementById('motif-input').value.trim();
-        closeRefuse();
-        showSpinner();
-        try {
-          const table = pendingRefuse.type === 'cert' ? 'certificats' : 'pieces_identite';
-          await sb.from(table).update({ statut: 'refuse', motif_refus: motif || null }).eq('id', pendingRefuse.docId);
-          // Create support ticket with reason
-          if (motif) {
-            await sb.from('support_tickets').insert({
-              user_id: pendingRefuse.userId,
-              sujet: 'Document rejeté',
-              message: motif,
-              statut: 'ouvert',
-            }).catch(() => {});
-          }
-          toast('Document rejeté');
-          await loadAll();
-        } catch(e) { toast('Erreur : ' + e.message, 'error'); }
-        hideSpinner();
-      };
+      el.innerHTML = docs.map(d => doneCard(d)).join('');
     }
 
     async function loadAll() {
@@ -255,17 +304,19 @@
       ]);
 
       const total = (certsPending?.length??0) + (idsPending?.length??0);
-      document.getElementById('pending-sub').textContent = total > 0 ? `${total} document${total>1?'s':''} en attente` : 'Aucun document en attente';
+      document.getElementById('pending-sub').textContent =
+        total > 0 ? `${total} document${total>1?'s':''} en attente` : 'Aucun document en attente';
 
       renderPending('certs-pending', certsPending, 'cert');
-      renderDone('certs-done', certsDone, 'cert');
+      renderDone('certs-done', certsDone);
 
       if (idsErr) {
-        document.getElementById('ids-pending').innerHTML = '<div class="empty-state"><div class="empty-icon">🪪</div><div class="empty-title">Table non configurée</div></div>';
+        document.getElementById('ids-pending').innerHTML =
+          '<div class="empty-state"><div class="empty-icon">🪪</div><div class="empty-title">Table non configurée</div><div class="empty-sub">Créez la table <code>pieces_identite</code> dans Supabase.</div></div>';
         document.getElementById('ids-done').innerHTML = '';
       } else {
         renderPending('ids-pending', idsPending, 'id');
-        renderDone('ids-done', idsDone, 'id');
+        renderDone('ids-done', idsDone);
       }
     }
 

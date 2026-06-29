@@ -11,7 +11,7 @@
 </head>
 <body>
   <script>
-    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
     window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
   </script>
@@ -32,23 +32,65 @@
       <main class="content">
         <!-- 6 stat cards -->
         <div class="stats-grid stats-grid-6" id="stats-grid">
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#ECFDF5">🎓</div><div><div class="stat-value" id="s-etudiants">—</div><div class="stat-label">Étudiants</div></div></div>
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#EBF2FA">🏠</div><div><div class="stat-value" id="s-bailleurs">—</div><div class="stat-label">Bailleurs</div></div></div>
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#F5F3FF">🧑</div><div><div class="stat-value" id="s-particuliers">—</div><div class="stat-label">Particuliers</div></div></div>
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#EBF2FA">📋</div><div><div class="stat-value" id="s-annonces">—</div><div class="stat-label">Annonces actives</div></div></div>
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#FFFBEB">📄</div><div><div class="stat-value" id="s-docs" style="color:var(--amber)">—</div><div class="stat-label">Docs en attente</div></div></div>
-          <div class="stat-card"><div class="stat-icon-wrap" style="background:#FEF2F2">💬</div><div><div class="stat-value" id="s-tickets" style="color:var(--red)">—</div><div class="stat-label">Tickets ouverts</div></div></div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#ECFDF5">🎓</div>
+            <div>
+              <div class="stat-value" id="s-etudiants">—</div>
+              <div class="stat-label">Étudiants</div>
+              <div class="stat-variation neutral" id="sv-etudiants"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#EBF2FA">🏠</div>
+            <div>
+              <div class="stat-value" id="s-bailleurs">—</div>
+              <div class="stat-label">Bailleurs</div>
+              <div class="stat-variation neutral" id="sv-bailleurs"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#F5F3FF">🧑</div>
+            <div>
+              <div class="stat-value" id="s-particuliers">—</div>
+              <div class="stat-label">Particuliers</div>
+              <div class="stat-variation neutral" id="sv-particuliers"></div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#EBF2FA">📋</div>
+            <div>
+              <div class="stat-value" id="s-annonces">—</div>
+              <div class="stat-label">Annonces actives</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#FFFBEB">📄</div>
+            <div>
+              <div class="stat-value" id="s-docs" style="color:var(--amber)">—</div>
+              <div class="stat-label">Docs en attente</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap" style="background:#FEF2F2">💬</div>
+            <div>
+              <div class="stat-value" id="s-tickets" style="color:var(--red)">—</div>
+              <div class="stat-label">Tickets ouverts</div>
+            </div>
+          </div>
         </div>
 
         <div class="dash-grid">
-          <!-- Chart inscriptions -->
+          <!-- SVG Bar Chart -->
           <div class="card">
             <div class="card-header">
-              <div><div class="card-title">Inscriptions — 7 derniers jours</div></div>
+              <div>
+                <div class="card-title">Inscriptions — 7 derniers jours</div>
+                <div class="card-sub" id="chart-total-sub"></div>
+              </div>
             </div>
             <div class="card-body">
-              <div class="chart-wrap">
-                <canvas id="chart-reg"></canvas>
+              <div class="chart-wrap" id="chart-wrap">
+                <div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--sub);font-size:13px">Chargement…</div>
               </div>
             </div>
           </div>
@@ -57,18 +99,18 @@
           <div class="card">
             <div class="card-header">
               <div class="card-title">Derniers inscrits</div>
-              <a href="utilisateurs.html" class="btn btn-ghost btn-sm">Voir tout</a>
+              <a href="utilisateurs.html" class="btn btn-ghost btn-sm">Voir tout →</a>
             </div>
             <div class="activity-list" id="recent-users">
               <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
             </div>
           </div>
 
-          <!-- 5 derniers tickets -->
+          <!-- Tickets non résolus -->
           <div class="card full">
             <div class="card-header">
               <div class="card-title">Derniers tickets support non résolus</div>
-              <a href="support.html" class="btn btn-ghost btn-sm">Voir tout</a>
+              <a href="support.html" class="btn btn-ghost btn-sm">Voir tout →</a>
             </div>
             <div id="recent-tickets">
               <div style="padding:20px;text-align:center;color:var(--sub);font-size:13px">Chargement…</div>
@@ -78,7 +120,7 @@
           <!-- Actions rapides -->
           <div class="card full">
             <div class="card-header"><div class="card-title">Actions rapides</div></div>
-            <div class="card-body" style="display:flex;gap:12px;flex-wrap:wrap">
+            <div class="card-body" style="display:flex;gap:10px;flex-wrap:wrap">
               <a href="certificats.html" class="btn btn-primary">📄 Valider les documents</a>
               <a href="annonces.html?filter=signale" class="btn btn-amber">⚠️ Gérer les signalements</a>
               <a href="support.html" class="btn btn-ghost">💬 Répondre aux tickets</a>
@@ -91,55 +133,100 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script src="app.js"></script>
   <script>
     document.getElementById('today-date').textContent =
       new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 
+    function renderSvgBars(counts, labels) {
+      const W = 560, H = 150, padL = 28, padR = 12, padT = 20, barArea = W - padL - padR;
+      const n = counts.length;
+      const barW = Math.floor(barArea / n * 0.55);
+      const gap  = Math.floor((barArea - barW * n) / (n - 1));
+      const max  = Math.max(...counts, 1);
+
+      let gridSvg = '', barSvg = '', labelSvg = '';
+      [0.25, 0.5, 0.75, 1].forEach(r => {
+        const y = padT + H - Math.round(r * H);
+        gridSvg += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="#E2E8F0" stroke-width="1"/>`;
+        gridSvg += `<text x="${padL - 4}" y="${y + 4}" text-anchor="end" font-size="9" fill="#647488">${Math.round(r * max)}</text>`;
+      });
+
+      counts.forEach((val, i) => {
+        const x     = padL + i * (barW + gap);
+        const barH  = Math.max(2, Math.round((val / max) * H));
+        const y     = padT + H - barH;
+        const color = val === 0 ? '#E2E8F0' : '#1E5AA8';
+        barSvg += `<rect x="${x}" y="${y}" width="${barW}" height="${barH}" rx="4" fill="${color}"/>`;
+        if (val > 0) {
+          barSvg += `<text x="${x + barW/2}" y="${y - 5}" text-anchor="middle" font-size="10" font-weight="600" fill="#1E5AA8">${val}</text>`;
+        }
+        labelSvg += `<text x="${x + barW/2}" y="${padT + H + 16}" text-anchor="middle" font-size="10" fill="#647488">${labels[i]}</text>`;
+      });
+
+      return `<svg viewBox="0 0 ${W} ${padT + H + 24}" width="100%" style="display:block">
+        ${gridSvg}${barSvg}${labelSvg}
+      </svg>`;
+    }
+
     (async () => {
       const auth = await initPage('dashboard');
       if (!auth) return;
 
-      // Parallel stat queries
+      const sevenDaysAgo = new Date(Date.now() - 6 * 86400000).toISOString();
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+
       const [
         { count: ne }, { count: nb }, { count: np },
         { count: na }, { count: nd }, { count: nt },
         { data: recentUsers },
         { data: regData },
         { data: recentTickets },
+        { count: neW }, { count: nbW }, { count: npW },
       ] = await Promise.all([
         sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','etudiant'),
         sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','bailleur'),
         sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','particulier'),
         sb.from('annonces').select('*',{count:'exact',head:true}).eq('statut','actif'),
-        sb.from('certificats').select('*',{count:'exact',head:true}).eq('statut','en_attente'),
+        sb.from('certificats').select('*',{count:'exact',head:true}).eq('statut','en_attente').catch(()=>({count:0})),
         sb.from('support_tickets').select('*',{count:'exact',head:true}).in('statut',['ouvert','en_cours']).catch(()=>({count:0})),
         sb.from('profiles').select('prenom,nom,role,created_at').neq('role','admin').order('created_at',{ascending:false}).limit(5),
-        sb.from('profiles').select('created_at').neq('role','admin')
-          .gte('created_at', new Date(Date.now()-6*86400000).toISOString()),
+        sb.from('profiles').select('created_at').neq('role','admin').gte('created_at', sevenDaysAgo),
         sb.from('support_tickets').select('id,sujet,statut,created_at,profiles:user_id(nom,prenom)')
           .in('statut',['ouvert','en_cours']).order('created_at',{ascending:false}).limit(5).catch(()=>({data:[]})),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','etudiant').gte('created_at', thirtyDaysAgo),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','bailleur').gte('created_at', thirtyDaysAgo),
+        sb.from('profiles').select('*',{count:'exact',head:true}).eq('role','particulier').gte('created_at', thirtyDaysAgo),
       ]);
 
-      document.getElementById('s-etudiants').textContent  = ne ?? 0;
-      document.getElementById('s-bailleurs').textContent  = nb ?? 0;
+      document.getElementById('s-etudiants').textContent    = ne ?? 0;
+      document.getElementById('s-bailleurs').textContent    = nb ?? 0;
       document.getElementById('s-particuliers').textContent = np ?? 0;
-      document.getElementById('s-annonces').textContent   = na ?? 0;
-      document.getElementById('s-docs').textContent       = nd ?? 0;
-      document.getElementById('s-tickets').textContent    = nt ?? 0;
+      document.getElementById('s-annonces').textContent     = na ?? 0;
+      document.getElementById('s-docs').textContent         = nd ?? 0;
+      document.getElementById('s-tickets').textContent      = nt ?? 0;
+
+      function setVariation(elId, count) {
+        const el = document.getElementById(elId);
+        if (!el || !count) return;
+        el.textContent = `+${count} ce mois`;
+        el.className = `stat-variation ${count > 0 ? 'up' : 'neutral'}`;
+      }
+      setVariation('sv-etudiants',   neW ?? 0);
+      setVariation('sv-bailleurs',   nbW ?? 0);
+      setVariation('sv-particuliers', npW ?? 0);
 
       // Recent users
       const ul = document.getElementById('recent-users');
       if (!recentUsers?.length) {
-        ul.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun inscrit</div></div>';
+        ul.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">Aucun inscrit récent</div></div>';
       } else {
         ul.innerHTML = recentUsers.map(u => `
           <div class="activity-item">
             <div class="activity-icon" style="background:${(ROLE_BG[u.role]??'#F3F4F6')}">
               ${ROLE_ICON[u.role]??'👤'}
             </div>
-            <div>
+            <div style="flex:1">
               <div class="activity-text">${u.prenom??''} ${u.nom??''}</div>
               <div class="activity-sub">${ROLE_LABEL[u.role]??u.role} · ${fmtDate(u.created_at)}</div>
             </div>
@@ -163,7 +250,7 @@
           </tr>`).join('')}</tbody></table>`;
       }
 
-      // Chart
+      // SVG Bar Chart
       const days = [], labels = [];
       for (let i=6;i>=0;i--) {
         const d = new Date(); d.setDate(d.getDate()-i);
@@ -171,31 +258,11 @@
         labels.push(d.toLocaleDateString('fr-FR',{weekday:'short',day:'numeric'}));
       }
       const counts = days.map(day => (regData??[]).filter(u=>u.created_at.startsWith(day)).length);
+      const total  = counts.reduce((s,v)=>s+v, 0);
 
-      new Chart(document.getElementById('chart-reg'), {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Inscriptions',
-            data: counts,
-            backgroundColor: 'rgba(30,90,168,0.15)',
-            borderColor: '#1E5AA8',
-            borderWidth: 2,
-            borderRadius: 6,
-            borderSkipped: false,
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { grid: { display: false }, ticks: { font:{ family:'Inter', size:11 }, color:'#647488' } },
-            y: { beginAtZero: true, ticks: { stepSize:1, font:{family:'Inter',size:11}, color:'#647488' }, grid: { color:'rgba(0,0,0,0.05)' } }
-          }
-        }
-      });
+      document.getElementById('chart-total-sub').textContent =
+        total > 0 ? `${total} inscription${total>1?'s':''} sur 7 jours` : 'Aucune inscription cette semaine';
+      document.getElementById('chart-wrap').innerHTML = renderSvgBars(counts, labels);
     })();
   </script>
 </body>

@@ -11,7 +11,7 @@
 </head>
 <body>
   <script>
-    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
     window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
   </script>
@@ -30,15 +30,35 @@
       </header>
 
       <main class="content">
-        <!-- Table not available fallback -->
+        <!-- Table absente -->
         <div id="table-error" style="display:none">
-          <div class="empty-state">
-            <div class="empty-icon">💬</div>
-            <div class="empty-title">Table support_tickets non configurée</div>
-            <p class="empty-sub" style="margin-top:6px">Créez la table <code>support_tickets</code> et <code>support_messages</code> dans Supabase pour activer ce module.</p>
+          <div style="background:var(--white);border-radius:12px;border:1px solid var(--border);box-shadow:var(--shadow);padding:48px 32px;text-align:center">
+            <div style="font-size:42px;margin-bottom:14px">🔧</div>
+            <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px">Module en cours de configuration</div>
+            <p style="font-size:13px;color:var(--sub);max-width:420px;margin:0 auto 20px;line-height:1.6">
+              La table <code style="background:var(--bg);padding:2px 6px;border-radius:4px;font-family:monospace">support_tickets</code>
+              n'existe pas encore dans votre projet Supabase.
+              Créez-la pour activer ce module.
+            </p>
+            <div class="info-banner" style="max-width:520px;margin:0 auto;text-align:left">
+              <div class="info-banner-icon">💡</div>
+              <div>
+                <div style="font-weight:600;margin-bottom:4px">SQL à exécuter dans Supabase</div>
+                <code style="font-size:12px;font-family:monospace;line-height:1.8;display:block">
+                  CREATE TABLE support_tickets (<br>
+                  &nbsp;&nbsp;id uuid DEFAULT gen_random_uuid() PRIMARY KEY,<br>
+                  &nbsp;&nbsp;user_id uuid REFERENCES profiles(id),<br>
+                  &nbsp;&nbsp;sujet text, message text,<br>
+                  &nbsp;&nbsp;statut text DEFAULT 'ouvert',<br>
+                  &nbsp;&nbsp;created_at timestamptz DEFAULT now()<br>
+                  );
+                </code>
+              </div>
+            </div>
           </div>
         </div>
 
+        <!-- Contenu principal -->
         <div id="support-content">
           <div class="toolbar">
             <div class="filter-pills">
@@ -68,12 +88,10 @@
         <button class="modal-close" onclick="closeTicket()">✕</button>
       </div>
       <div class="modal-body">
-        <!-- Conversation -->
         <div class="conv-box" id="conv-box">
           <div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>
         </div>
 
-        <!-- Reply form -->
         <div id="reply-form">
           <div class="form-group" style="margin-bottom:8px">
             <textarea class="form-textarea" id="reply-input" placeholder="Votre réponse…" rows="3" style="resize:none"></textarea>
@@ -94,7 +112,7 @@
   <script src="app.js"></script>
   <script>
     let allTickets = [], filtered = [], currentPage = 1, activeFilter = 'open';
-    let selectedTicket = null, adminSession = null;
+    let selectedTicket = null;
 
     function gotoPage(n) { currentPage = n; renderTickets(); }
 
@@ -107,7 +125,7 @@
 
     function applyFilter() {
       filtered = allTickets.filter(t => {
-        if (activeFilter === 'open') return ['ouvert','en_cours'].includes(t.statut);
+        if (activeFilter === 'open')   return ['ouvert','en_cours'].includes(t.statut);
         if (activeFilter === 'resolu') return t.statut === 'resolu';
         return true;
       });
@@ -116,7 +134,7 @@
     }
 
     function renderTickets() {
-      const el = document.getElementById('tickets-list');
+      const el   = document.getElementById('tickets-list');
       const page = paginate(filtered, currentPage);
 
       const open = allTickets.filter(t => ['ouvert','en_cours'].includes(t.statut)).length;
@@ -132,7 +150,7 @@
       el.innerHTML = page.map(t => {
         const name = t.profiles ? `${t.profiles.prenom??''} ${t.profiles.nom??''}`.trim() : '—';
         return `<div class="ticket-card" onclick="openTicket('${t.id}')">
-          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:38px;height:38px;flex-shrink:0">
+          <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:40px;height:40px;flex-shrink:0">
             ${initials(t.profiles?.nom, t.profiles?.prenom)}
           </div>
           <div style="flex:1;min-width:0">
@@ -159,14 +177,13 @@
       document.getElementById('ticket-modal-title').textContent = t.sujet ?? '—';
       document.getElementById('ticket-modal-sub').innerHTML = `${name} · ${statusBadge(t.statut)} · ${fmtDate(t.created_at)}`;
       document.getElementById('reply-input').value = '';
-      document.getElementById('modal-ticket').classList.remove('hidden');
+      openModal('modal-ticket');
 
       const isResolved = t.statut === 'resolu';
-      document.getElementById('reply-form').style.display = isResolved ? 'none' : 'block';
-      document.getElementById('resolved-msg').style.display = isResolved ? 'block' : 'none';
-      document.getElementById('btn-resolve').style.display = isResolved ? 'none' : 'inline-flex';
+      document.getElementById('reply-form').style.display    = isResolved ? 'none' : 'block';
+      document.getElementById('resolved-msg').style.display  = isResolved ? 'block' : 'none';
+      document.getElementById('btn-resolve').style.display   = isResolved ? 'none' : 'inline-flex';
 
-      // Load conversation
       await loadConversation(t.id, t.message);
     }
 
@@ -174,15 +191,12 @@
       const box = document.getElementById('conv-box');
       box.innerHTML = '<div style="text-align:center;color:var(--sub);font-size:12px">Chargement…</div>';
 
-      // Original message
       let html = `<div class="msg-row user">
         <div class="msg-bubble user">${firstMsg ?? '(aucun message)'}</div>
       </div>`;
 
       const { data: msgs, error } = await sb.from('support_messages')
-        .select('*')
-        .eq('ticket_id', ticketId)
-        .order('created_at');
+        .select('*').eq('ticket_id', ticketId).order('created_at');
 
       if (!error && msgs?.length) {
         html += msgs.map(m => `
@@ -196,10 +210,7 @@
       box.scrollTop = box.scrollHeight;
     }
 
-    function closeTicket() {
-      document.getElementById('modal-ticket').classList.add('hidden');
-      selectedTicket = null;
-    }
+    function closeTicket() { closeModal('modal-ticket'); selectedTicket = null; }
 
     async function sendReply() {
       if (!selectedTicket) return;
@@ -212,14 +223,12 @@
       try {
         await sb.from('support_messages').insert({
           ticket_id: selectedTicket.id,
-          auteur_id: adminSession?.user?.id,
           message: msg,
           is_admin: true,
         });
         await sb.from('support_tickets').update({ statut: 'en_cours' }).eq('id', selectedTicket.id);
         document.getElementById('reply-input').value = '';
         await loadConversation(selectedTicket.id, selectedTicket.message);
-        // Update local state
         const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
         if (idx !== -1) allTickets[idx].statut = 'en_cours';
         toast('Réponse envoyée ✓');
@@ -234,17 +243,19 @@
         await sb.from('support_tickets').update({ statut: 'resolu' }).eq('id', selectedTicket.id);
         const idx = allTickets.findIndex(t => t.id === selectedTicket.id);
         if (idx !== -1) { allTickets[idx].statut = 'resolu'; selectedTicket.statut = 'resolu'; }
-        document.getElementById('reply-form').style.display = 'none';
+        document.getElementById('reply-form').style.display   = 'none';
         document.getElementById('resolved-msg').style.display = 'block';
-        document.getElementById('btn-resolve').style.display = 'none';
+        document.getElementById('btn-resolve').style.display  = 'none';
         document.getElementById('ticket-modal-sub').innerHTML =
-          `${document.getElementById('ticket-modal-sub').textContent.split('·')[0].trim()} · ${statusBadge('resolu')}`;
+          document.getElementById('ticket-modal-sub').textContent.split('·')[0].trim() +
+          ` · ${statusBadge('resolu')}`;
         applyFilter();
         toast('Ticket résolu ✓');
       }, { label: 'Résoudre' });
     }
 
     async function loadTickets() {
+      // Vérifie si la table existe (code 42P01 = relation inexistante)
       const { data, error } = await sb.from('support_tickets')
         .select('*,profiles:user_id(nom,prenom)')
         .order('created_at', { ascending: false });
@@ -262,7 +273,6 @@
     (async () => {
       const auth = await initPage('support');
       if (!auth) return;
-      adminSession = auth.session;
       await loadTickets();
     })();
   </script>

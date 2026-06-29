@@ -11,7 +11,7 @@
 </head>
 <body>
   <script>
-    window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
+    window.SUPABASE_URL      = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
     window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
     window.SUPABASE_SERVICE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MTg1NzkwMiwiZXhwIjoyMDk3NDMzOTAyfQ.DhDZJ_hov0CVZcmubcE-2fbxRNepUjQyZzaaaamDRSE';
   </script>
@@ -81,9 +81,9 @@
         <div class="detail-grid" id="modal-ann-fields"></div>
         <div class="sep"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-green btn-sm" id="btn-restore" onclick="changeStatus('actif')">✓ Restaurer</button>
+          <button class="btn btn-green btn-sm" id="btn-restore"     onclick="changeStatus('actif')">✓ Restaurer</button>
           <button class="btn btn-amber btn-sm" id="btn-suspend-ann" onclick="changeStatus('suspendu')">⛔ Suspendre</button>
-          <button class="btn btn-red btn-sm" onclick="deleteAnn()">🗑 Supprimer</button>
+          <button class="btn btn-red btn-sm"                        onclick="deleteAnn()">🗑 Supprimer</button>
         </div>
       </div>
     </div>
@@ -94,7 +94,6 @@
   <script>
     let allAnnonces = [], filtered = [], currentPage = 1, activeStatus = '', selectedAnn = null;
 
-    // Pre-filter via URL param (from dashboard quick action)
     const urlStatus = new URLSearchParams(location.search).get('filter');
     if (urlStatus) activeStatus = urlStatus;
 
@@ -118,7 +117,7 @@
     }
 
     function renderTable() {
-      const page = paginate(filtered, currentPage);
+      const page  = paginate(filtered, currentPage);
       const tbody = document.getElementById('ann-tbody');
 
       if (!filtered.length) {
@@ -130,11 +129,13 @@
       tbody.innerHTML = page.map(a => {
         const auteur = a.auteur ? `${a.auteur.prenom??''} ${a.auteur.nom??''}`.trim() : '—';
         const sig = a.nb_signalements > 0
-          ? `<span class="badge badge-amber">⚠️ ${a.nb_signalements}</span>`
+          ? `<span class="badge badge-red">⚠️ ${a.nb_signalements}</span>`
           : '<span style="color:var(--sub)">—</span>';
+        const catColor = {logement:'#EBF2FA',emploi:'#ECFDF5',services:'#F5F3FF',dons:'#FEF2F2',bons_plans:'#FFFBEB'}[a.categorie]??'#F3F4F6';
+        const catText  = {logement:'#1E5AA8',emploi:'#1A7B23',services:'#7C3AED',dons:'#C0392B',bons_plans:'#92400E'}[a.categorie]??'#647488';
         return `<tr onclick="openAnn('${a.id}')">
           <td><div style="font-weight:600;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.titre??'—'}</div></td>
-          <td>${CAT_ICON[a.categorie]??'📋'} ${a.categorie??'—'}</td>
+          <td><span class="badge" style="background:${catColor};color:${catText}">${CAT_ICON[a.categorie]??'📋'} ${a.categorie??'—'}</span></td>
           <td>${auteur}</td>
           <td>${a.prix ? a.prix+'€' : '—'}</td>
           <td>${sig}</td>
@@ -145,7 +146,8 @@
       }).join('');
 
       renderPagination('ann-pagination', filtered.length, currentPage);
-      document.getElementById('ann-sub').textContent = `${filtered.length} annonce${filtered.length!==1?'s':''}`;
+      document.getElementById('ann-sub').textContent =
+        `${filtered.length} annonce${filtered.length!==1?'s':''}${activeStatus ? ' — filtrées' : ''}`;
     }
 
     function openAnn(id) {
@@ -163,7 +165,7 @@
         ['Auteur', auteur],
         ['Prix', a.prix ? a.prix+'€' : '—'],
         ['Ville', a.ville??'—'],
-        ['Signalements', a.nb_signalements>0 ? `<span class="badge badge-amber">⚠️ ${a.nb_signalements}</span>` : '0'],
+        ['Signalements', a.nb_signalements>0 ? `<span class="badge badge-red">⚠️ ${a.nb_signalements}</span>` : '0'],
         ['Publiée le', fmtDate(a.created_at)],
         ['Description', a.description??'—'],
       ];
@@ -172,28 +174,31 @@
         `<div${i===fields.length-1?' class="detail-full"':''}><div class="detail-key">${k}</div><div class="detail-val">${v}</div></div>`
       ).join('');
 
-      document.getElementById('btn-restore').style.display = a.statut==='suspendu' ? 'inline-flex' : 'none';
+      document.getElementById('btn-restore').style.display     = a.statut==='suspendu' ? 'inline-flex' : 'none';
       document.getElementById('btn-suspend-ann').style.display = a.statut!=='suspendu' ? 'inline-flex' : 'none';
-      document.getElementById('modal-ann').classList.remove('hidden');
+      openModal('modal-ann');
     }
 
-    function closeAnn() { document.getElementById('modal-ann').classList.add('hidden'); selectedAnn = null; }
+    function closeAnn() { closeModal('modal-ann'); selectedAnn = null; }
 
     async function changeStatus(newStatus) {
       if (!selectedAnn) return;
-      showSpinner();
-      const updates = { statut: newStatus };
-      if (newStatus === 'actif') updates.nb_signalements = 0;
-      await sb.from('annonces').update(updates).eq('id', selectedAnn.id);
-      hideSpinner();
-      toast(newStatus === 'actif' ? 'Annonce restaurée ✓' : 'Annonce suspendue');
-      closeAnn();
-      await loadAnnonces();
+      const label = newStatus === 'actif' ? 'Restaurer cette annonce ?' : 'Suspendre cette annonce ?';
+      showConfirm(label, async () => {
+        showSpinner();
+        const updates = { statut: newStatus };
+        if (newStatus === 'actif') updates.nb_signalements = 0;
+        await sb.from('annonces').update(updates).eq('id', selectedAnn.id);
+        hideSpinner();
+        toast(newStatus === 'actif' ? 'Annonce restaurée ✓' : 'Annonce suspendue');
+        closeAnn();
+        await loadAnnonces();
+      }, { label: newStatus === 'actif' ? 'Restaurer' : 'Suspendre', danger: newStatus !== 'actif' });
     }
 
     function deleteAnn() {
       if (!selectedAnn) return;
-      showConfirm(`Supprimer définitivement l'annonce "${selectedAnn.titre}" ?`, async () => {
+      showConfirm(`Supprimer définitivement "${selectedAnn.titre}" ?`, async () => {
         showSpinner();
         await sb.from('annonces').delete().eq('id', selectedAnn.id);
         hideSpinner();
@@ -208,19 +213,19 @@
         .select('*,auteur:auteur_id(nom,prenom)')
         .order('created_at', { ascending: false });
       allAnnonces = data ?? [];
+
+      if (urlStatus) {
+        document.querySelectorAll('.filter-pill').forEach(b => {
+          const active = b.getAttribute('onclick')?.includes(`'${urlStatus}'`);
+          b.classList.toggle('active', active);
+        });
+      }
       applyFilters();
     }
 
     (async () => {
       const auth = await initPage('annonces');
       if (!auth) return;
-      // Apply URL filter after filters rendered
-      if (urlStatus) {
-        document.querySelectorAll('.filter-pill').forEach(b => {
-          if (b.getAttribute('onclick')?.includes(`'${urlStatus}'`)) b.classList.add('active');
-          else b.classList.remove('active');
-        });
-      }
       await loadAnnonces();
     })();
   </script>
