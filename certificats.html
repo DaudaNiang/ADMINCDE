@@ -12,7 +12,7 @@
 <body>
   <script>
     window.SUPABASE_URL     = 'https://sovelwnthvqtgtvxfpsj.supabase.co';
-    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvdmVsd250aHZxdGd0dnhmcHNqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4NTc5MDIsImV4cCI6MjA5NzQzMzkwMn0.GEvY81Wn_CAROwXDFc_GIdWxBxMhORach9bZJcsPpDk';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJFUzI1NiIsImtpZCI6IjZiMzdkNGQ4LWY5ZWMtNDAwMi05MzZhLWM1ZDkxNmZiNzc5YyIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NvdmVsd250aHZxdGd0dnhmcHNqLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJyZWYiOiJzb3ZlbHdudGh2cXRndHZ4ZnBzaiIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzQ1NTI2MDUwLCJleHAiOjIwNjExMDE2NTB9.gcaHwpPdOcFpJPPKzr8wOAHnm4THqZNQGjl1EHMF5_Ws4Bkd4iqQSQxBhaqMCbv7HZiIzwYf1R1xfUv1Knmrw';
   </script>
 
   <div class="app-layout">
@@ -55,6 +55,24 @@
     </div>
   </div>
 
+  <!-- Modal image viewer -->
+  <div class="modal-backdrop hidden" id="modal-image">
+    <div class="modal modal-lg" style="max-width:760px">
+      <div class="modal-header">
+        <span class="modal-title">Aperçu du document</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <a class="btn btn-ghost btn-sm" id="modal-img-link" href="#" target="_blank" download>⬇ Télécharger</a>
+          <button class="modal-close" onclick="document.getElementById('modal-image').classList.add('hidden')">✕</button>
+        </div>
+      </div>
+      <div class="modal-body" style="text-align:center;padding:16px;background:var(--bg);border-radius:0 0 16px 16px">
+        <img id="modal-img-el" src="" alt="Document"
+             style="max-width:100%;max-height:74vh;border-radius:8px;object-fit:contain;box-shadow:0 4px 24px rgba(0,0,0,0.12)"
+             onerror="this.alt='Image non disponible';this.style.height='120px'" />
+      </div>
+    </div>
+  </div>
+
   <!-- Modal refus -->
   <div class="modal-backdrop hidden" id="modal-refuse">
     <div class="modal">
@@ -91,10 +109,11 @@
     function closeRefuse() { document.getElementById('modal-refuse').classList.add('hidden'); pendingRefuse = null; }
 
     function docCard(doc, type, userName, userEmail) {
-      const bucketPath = type === 'cert' ? 'certificats' : 'pieces_identite';
-      const viewUrl = doc.storage_path
-        ? `${window.SUPABASE_URL}/storage/v1/object/public/${bucketPath}/${doc.storage_path}`
-        : null;
+      const bucket  = type === 'cert' ? 'certificats' : 'pieces-identite';
+      const userId  = doc[type === 'cert' ? 'etudiant_id' : 'user_id'];
+      const hasFile = !!doc.storage_path;
+      // escape path for data-attribute (avoids quote-injection)
+      const safePath = hasFile ? doc.storage_path.replace(/"/g, '&quot;') : '';
       return `
         <div class="doc-card">
           <div class="avatar" style="background:var(--primary-light);color:var(--primary);width:42px;height:42px;font-size:14px">
@@ -104,13 +123,44 @@
             <div style="font-size:14px;font-weight:600;color:var(--text)">${userName}</div>
             <div style="font-size:12px;color:var(--sub);margin-top:2px">${userEmail}</div>
             <div style="font-size:12px;color:var(--sub);margin-top:2px">Soumis le ${fmtDate(doc.created_at)}</div>
-            ${viewUrl ? `<a href="${viewUrl}" target="_blank" class="btn btn-ghost btn-sm" style="margin-top:10px;gap:5px">👁 Voir le document</a>` : '<div style="font-size:12px;color:var(--sub);margin-top:8px">Aucun fichier attaché</div>'}
+            ${hasFile
+              ? `<button class="btn btn-ghost btn-sm" style="margin-top:10px;gap:5px"
+                   data-bucket="${bucket}" data-path="${safePath}"
+                   onclick="viewDoc(this.dataset.bucket, this.dataset.path, this)">
+                   👁 Voir le document
+                 </button>`
+              : '<div style="font-size:12px;color:var(--sub);margin-top:8px">Aucun fichier attaché</div>'
+            }
           </div>
           <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-            <button class="btn btn-green btn-sm" onclick="validate('${type}','${doc.id}','${doc[type==='cert'?'etudiant_id':'user_id']}')">✓ Valider</button>
-            <button class="btn btn-red btn-sm" onclick="openRefuse('${type}','${doc.id}','${doc[type==='cert'?'etudiant_id':'user_id']}')">✗ Rejeter</button>
+            <button class="btn btn-green btn-sm" onclick="validate('${type}','${doc.id}','${userId}')">✓ Valider</button>
+            <button class="btn btn-red btn-sm" onclick="openRefuse('${type}','${doc.id}','${userId}')">✗ Rejeter</button>
           </div>
         </div>`;
+    }
+
+    async function viewDoc(bucket, storagePath, btn) {
+      const orig = btn.innerHTML;
+      btn.disabled = true; btn.innerHTML = '<span class="spin-sm" style="border-top-color:var(--sub)"></span>';
+      const { data, error } = await sb.storage.from(bucket).createSignedUrl(storagePath, 3600);
+      btn.disabled = false; btn.innerHTML = orig;
+      if (error || !data?.signedUrl) {
+        toast('Impossible de charger le document' + (error?.message ? ' : ' + error.message : ''), 'error');
+        return;
+      }
+      const ext = storagePath.split('.').pop().toLowerCase();
+      const isImage = ['jpg','jpeg','png','webp','gif','heic','heif','bmp'].includes(ext);
+      if (isImage) {
+        const imgEl  = document.getElementById('modal-img-el');
+        const linkEl = document.getElementById('modal-img-link');
+        imgEl.src = '';          // reset before load to show spinner
+        imgEl.src = data.signedUrl;
+        linkEl.href = data.signedUrl;
+        document.getElementById('modal-image').classList.remove('hidden');
+      } else {
+        // PDF or other: open in new tab
+        window.open(data.signedUrl, '_blank');
+      }
     }
 
     function doneCard(doc, type) {
